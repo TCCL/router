@@ -1,0 +1,9 @@
+router - v0.0.0
+--------------------------------------------------------------------------------
+This repository provides a class library for routing requests to a PHP
+application.
+
+Primary authors:
+    Roger Gee <roger.gee@tulsalibrary.org>
+
+Other authors:
