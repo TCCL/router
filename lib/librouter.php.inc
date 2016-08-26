@@ -7,6 +7,12 @@
  */
 
 /**
+ * Define content-types.
+ */
+define('CONTENT_JSON','application/json');
+define('CONTENT_FILE_DOWNLOAD','application/octet-stream');
+
+/**
  * This interface represents a handler object.
  */
 interface RequestHandler {
@@ -93,6 +99,7 @@ class Router {
         if (!is_callable($notFoundHandler) && ! ($notFoundHandler instanceof RequestHandler)) {
             throw new Exception(__METHOD__.": handler must be a callable or RequestHandler");
         }
+        $this->notFound = $notFoundHandler;
     }
 
     /**
@@ -109,7 +116,7 @@ class Router {
      */
     public function addRoute($method,$uri,$handler) {
         // Make sure the handler is either a callback or a kind of RequestHandler
-        if (!is_callable($handler) && ! ($hander instanceof RequestHandler)) {
+        if (!is_callable($handler) && ! ($handler instanceof RequestHandler)) {
             throw new Exception(__METHOD__.": handler must be a callable or RequestHandler");
         }
 
@@ -129,13 +136,14 @@ class Router {
     public function route($method,$uri) {
         $statusCode = 200;
         $contentType = 'text/html';
+        $uri = parse_url($uri,PHP_URL_PATH);
 
         // Get the correct set of request parameters.
         $method = strtoupper($method);
-        if ($method == 'get') {
+        if ($method == 'GET') {
             $params = $_GET;
         }
-        else if ($method == 'post') {
+        else if ($method == 'POST') {
             $params = $_POST;
         }
         else {
@@ -159,7 +167,7 @@ class Router {
                 }
             }
             if (!isset($handler)) {
-                $handler = $this->notFoundHandler;
+                $handler = $this->notFound;
             }
         }
         if (!isset($matches)) {
