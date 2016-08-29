@@ -19,6 +19,9 @@ interface RequestHandler {
     /**
      * This function should run the request handler.
      *
+     * @param callable $flush
+     *  A callback to flush headers set by the calling context; this should be
+     *  called if the application is going to write a large amount of output
      * @param  string $statusCode
      *  Used to set the status code
      * @param  string $contentType
@@ -28,7 +31,7 @@ interface RequestHandler {
      * @param  array $matches
      *  Will contain any regex matches from the URI
      */
-    function run(&$statusCode,&$contentType,$params,$matches = array());
+    function run(callable $flush,&$statusCode,&$contentType,$params,$matches = array());
 }
 
 /**
@@ -174,19 +177,25 @@ class Router {
             $matches = array();
         }
 
+        // Create a function that the handler can call to flush the statusCode
+        // and contentType. This is important if the handler is going to output
+        // any large amount of information. Note that we must import the
+        // variables into the closure by reference.
+        $flushHeaders = function() use (&$contentType,&$statusCode) {
+            // Set status code and content type.
+            http_response_code($statusCode);
+            header("Content-Type: $contentType");
+        };
+
         // Invoke the handler.
         if (!is_callable($handler)) {
             // Transform the handler into a callable.
             $handler = array($handler,'run');
         }
         try {
-            $handler($statusCode,$contentType,$params,$matches);
+            $handler($flushHeaders,$statusCode,$contentType,$params,$matches);
         } catch (Exception $ex) {
             throw new HandlerException($ex->getMessage(),$contentType);
         }
-
-        // Set status code and content type.
-        http_response_code($statusCode);
-        header("Content-Type: $contentType");
     }
 }
