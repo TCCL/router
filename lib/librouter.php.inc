@@ -28,16 +28,22 @@ interface RequestHandler {
      * @param callable $flush
      *  A callback to flush headers set by the calling context; this should be
      *  called if the application is going to write a large amount of output
-     * @param string $statusCode
-     *  Used to set the status code
-     * @param string $contentType
-     *  Used to set the content type
-     * @param array $params
-     *  Will contain the request parameters as an associative array
+     * @param array $info
+     *  An associative array containing the following properties:
+     *  - int &$statusCode
+     *     An assignable reference to set the response code
+     *  - string &$contentType
+     *     An assignable reference to set the content type
+     *  - string $method
+     *     The request method
+     *  - string $uri
+     *     The request uri
+     *  - array $params
+     *     An associative array containing the request parameters
      * @param array $matches
-     *  Will contain any regex matches from the URI
+     *  Will contain any regex matches from the URI string
      */
-    function run(callable $flush,&$statusCode,&$contentType,array $params,array $matches = array());
+    function run(callable $flush,array $info,array $matches);
 }
 
 /**
@@ -75,19 +81,7 @@ class Router {
      * literal string or a regex. Handlers are either PHP callables or a class
      * (or instance of a class) that implements RequestHandler.
      *
-     * Callback function:
-     *  @param string $statusCode
-     *   The status code returned by the request handler
-     *  @param string $contentType
-     *   The content type returned by the request handler
-     *  @param array $params
-     *   An associative array of request parameters
-     *  @param array $matches
-     *   If the URI was a regex, this will contain any matches. Otherwise it is
-     *   an empty array.
-     *
-     * function callback(&$statusCode,&$contentType,$params,$matches = array());
-     *
+     * The callables implement the same interface as RequestHandler::run.
      *
      * @var array
      */
@@ -140,7 +134,7 @@ class Router {
      */
     public function route($method,$uri,$basedir = null) {
         $statusCode = 200;
-        $contentType = 'text/html';
+        $contentType = CONTENT_HTML;
         $uri = parse_url($uri,PHP_URL_PATH);
 
         // Find path component relative to the specified base directory.
@@ -194,7 +188,7 @@ class Router {
             header("Content-Type: $contentType");
         };
 
-        // Invoke the handler.
+        // Find and prepare handler for execution.
         if (!is_callable($handler)) {
             // Transform the handler into a callable. We assume that it may
             // either be an object whose class implements
@@ -213,8 +207,19 @@ class Router {
 
             $handler = array($handler,'run');
         }
+
+        // Prepare info array.
+        $info = array(
+            'statusCode' => &$statusCode,
+            'contentType' => &$contentType,
+            'method' => $method,
+            'uri' => $uri,
+            'params' => $params,
+        );
+
+        // Invoke the handler.
         try {
-            $handler($flushHeaders,$statusCode,$contentType,$params,$matches);
+            $handler($flushHeaders,$info,$matches);
         } catch (Exception $ex) {
             throw new HandlerException($ex->getMessage(),$contentType);
         }
