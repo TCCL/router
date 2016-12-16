@@ -3,17 +3,23 @@
 /**
  * router.php.inc
  *
+ * This library provides an extremely simple request router. It is designed to
+ * be utterly minimal.
+ *
  * @package router
  */
 
 /**
- * Define content-types.
+ * Define content-type constants for convenience.
  */
+define('CONTENT_TEXT','text/plain');
+define('CONTENT_HTML','text/html');
 define('CONTENT_JSON','application/json');
 define('CONTENT_FILE_DOWNLOAD','application/octet-stream');
 
 /**
- * This interface represents a handler object.
+ * This interface represents a handler object. Class-based request handlers must
+ * implement this interface.
  */
 interface RequestHandler {
     /**
@@ -22,16 +28,16 @@ interface RequestHandler {
      * @param callable $flush
      *  A callback to flush headers set by the calling context; this should be
      *  called if the application is going to write a large amount of output
-     * @param  string $statusCode
+     * @param string $statusCode
      *  Used to set the status code
-     * @param  string $contentType
+     * @param string $contentType
      *  Used to set the content type
-     * @param  array $params
+     * @param array $params
      *  Will contain the request parameters as an associative array
-     * @param  array $matches
+     * @param array $matches
      *  Will contain any regex matches from the URI
      */
-    function run(callable $flush,&$statusCode,&$contentType,$params,$matches = array());
+    function run(callable $flush,&$statusCode,&$contentType,array $params,array $matches = array());
 }
 
 /**
@@ -57,7 +63,7 @@ class HandlerException extends Exception {
  */
 class Router {
     /**
-     * This is the handler to call when
+     * This is the handler to call when no valid route is found.
      *
      * @var handler (i.e. callable or RequestHandler)
      */
@@ -66,8 +72,8 @@ class Router {
     /**
      * This is the route table that maps request URIs to a handler. The mappings
      * are sorted into buckets by request method. Each URI can either be a
-     * literal string or a regex. Handlers are either PHP callables or an instance
-     * of a class that implements RequestHandler.
+     * literal string or a regex. Handlers are either PHP callables or a class
+     * (or instance of a class) that implements RequestHandler.
      *
      * Callback function:
      *  @param string $statusCode
@@ -79,9 +85,9 @@ class Router {
      *  @param array $matches
      *   If the URI was a regex, this will contain any matches. Otherwise it is
      *   an empty array.
-     **
+     *
      * function callback(&$statusCode,&$contentType,$params,$matches = array());
-     **
+     *
      *
      * @var array
      */
@@ -99,9 +105,6 @@ class Router {
      *  A default handler to call when a specified route does not exist
      */
     public function __construct($notFoundHandler) {
-        if (!is_callable($notFoundHandler) && ! ($notFoundHandler instanceof RequestHandler)) {
-            throw new Exception(__METHOD__.": handler must be a callable or RequestHandler");
-        }
         $this->notFound = $notFoundHandler;
     }
 
@@ -114,15 +117,10 @@ class Router {
      * @param  string $uri
      *  The URI against which to match; this may be a literal string or regex
      * @param  mixed $handler
-     *  Either a callable or instance of RequestHandler that represents the
-     *  handler for the request
+     *  Either a callable or a class that implements RequestHandler that
+     *  represents the handler for the request
      */
     public function addRoute($method,$uri,$handler) {
-        // Make sure the handler is either a callback or a kind of RequestHandler
-        if (!is_callable($handler) && ! ($handler instanceof RequestHandler)) {
-            throw new Exception(__METHOD__.": handler must be a callable or RequestHandler");
-        }
-
         // Add the handler to the route table.
         $this->routeTable[$method][$uri] = $handler;
     }
@@ -131,15 +129,24 @@ class Router {
      * This function performs the specified request by routing control to a
      * registered request handler.
      *
-     * @param  string $method
+     * @param string $method
      *  The HTTP request method
-     * @param  string $uri
+     * @param string $uri
      *  The request URI
+     * @param string $basedir
+     *  The base directory of the requests. URIs are transformed to be relative
+     *  to this directory so that routes can happen under subdirectories. This
+     *  should be an absolute path (under the Web root).
      */
-    public function route($method,$uri) {
+    public function route($method,$uri,$basedir = null) {
         $statusCode = 200;
         $contentType = 'text/html';
         $uri = parse_url($uri,PHP_URL_PATH);
+
+        // Find path component relative to the specified base directory.
+        if (!empty($basedir) && strpos($uri,$basedir) === 0) {
+            $uri = substr($uri,strlen($basedir));
+        }
 
         // Get the correct set of request parameters.
         $method = strtoupper($method);
@@ -189,7 +196,21 @@ class Router {
 
         // Invoke the handler.
         if (!is_callable($handler)) {
-            // Transform the handler into a callable.
+            // Transform the handler into a callable. We assume that it may
+            // either be an object whose class implements
+            // RequestHandler. Otherwise it is a class name that implements
+            // RequestHandler.
+
+            if (!is_object($handler)) {
+                // Assume $handler is a class name.
+                $handler = new $handler;
+            }
+
+            // Make sure object's class implements RequestHandler.
+            if (!is_a($handler,'RequestHandler')) {
+                throw new Exception(__METHOD__.': request handler object must implement RequestHandler');
+            }
+
             $handler = array($handler,'run');
         }
         try {
