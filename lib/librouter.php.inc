@@ -140,6 +140,9 @@ class Router {
         // Find path component relative to the specified base directory.
         if (!empty($basedir) && strpos($uri,$basedir) === 0) {
             $uri = substr($uri,strlen($basedir));
+            if (empty($uri)) {
+                $uri = '/';
+            }
         }
 
         // Get the correct set of request parameters.
