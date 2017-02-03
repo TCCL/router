@@ -72,8 +72,8 @@ class Router {
     /**
      * Response information:
      */
-    public $statusCode;
-    public $contentType;
+    public $statusCode = 200;
+    public $contentType = CONTENT_HTML;
     public $headers = array();
 
     /**
@@ -117,8 +117,6 @@ class Router {
      *  should be an absolute path (under the Web root).
      */
     public function route($method,$uri,$basedir = null) {
-        $this->statusCode = 200;
-        $this->contentType = CONTENT_HTML;
         $this->uri = parse_url($uri,PHP_URL_PATH);
         $this->method = strtoupper($method);
 
@@ -203,10 +201,10 @@ class Router {
 
     private function parseInputParameters() {
         if (isset($_SERVER['CONTENT_TYPE'])) {
-            $type = $_SERVER['CONTENT_TYPE'];
+            $type = explode(';',$_SERVER['CONTENT_TYPE'])[0];
         }
         else if (isset($_SERVER['HTTP_CONTENT_TYPE'])) {
-            $type = $_SERVER['HTTP_CONTENT_TYPE'];
+            $type = explode(';',$_SERVER['HTTP_CONTENT_TYPE'])[0];
         }
         else {
             $type = null;
