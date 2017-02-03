@@ -47,23 +47,6 @@ interface RequestHandler {
 }
 
 /**
- * This exception type is used to pass an exception along with the handler-defined
- * content type.
- */
-class HandlerException extends Exception {
-    private $contentType; // Content type for reporting from handler
-
-    public function __construct($message,$contentType) {
-        parent::__construct($message);
-        $this->contentType = $contentType;
-    }
-
-    public function getContentType() {
-        return $this->contentType;
-    }
-}
-
-/**
  * This class provides a Router object that is used to define request routes
  * for an application-backend.
  */
@@ -221,10 +204,6 @@ class Router {
         );
 
         // Invoke the handler.
-        try {
-            $handler($flushHeaders,$info,$matches);
-        } catch (Exception $ex) {
-            throw new HandlerException($ex->getMessage(),$contentType);
-        }
+        $handler($flushHeaders,$info,$matches);
     }
 }
