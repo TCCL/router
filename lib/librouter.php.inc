@@ -16,6 +16,7 @@ define('CONTENT_TEXT','text/plain');
 define('CONTENT_HTML','text/html');
 define('CONTENT_JSON','application/json');
 define('CONTENT_FILE_DOWNLOAD','application/octet-stream');
+define('CONTENT_FORM_URLENCODED','application/x-www-form-urlencoded');
 
 /**
  * This interface represents a handler object. Class-based request handlers must
@@ -201,17 +202,34 @@ class Router {
     }
 
     private function parseInputParameters() {
-        if ($this->method == 'GET') {
-            $this->params = $_GET;
+        if (isset($_SERVER['CONTENT_TYPE'])) {
+            $type = $_SERVER['CONTENT_TYPE'];
         }
-        else if ($this->method == 'POST') {
-            $this->params = $_POST;
+        else if (isset($_SERVER['HTTP_CONTENT_TYPE'])) {
+            $type = $_SERVER['HTTP_CONTENT_TYPE'];
         }
         else {
-            // Otherwise we need to parse the request parameters from the
-            // request body.
-            $input = file_get_contents('php://input');
-            parse_str($input,$this->params);
+            $type = null;
+        }
+
+        if ($type == CONTENT_FORM_URLENCODED) {
+            if ($this->method == 'POST') {
+                $this->params = $_POST;
+            }
+            else {
+                // Otherwise we need to parse the request parameters from the
+                // request body.
+                $input = file_get_contents('php://input');
+                parse_str($input,$this->params);
+            }
+        }
+        else if ($type == CONTENT_JSON) {
+            $this->params = json_decode(file_get_contents('php://input'),true);
+        }
+        else if ($this->method == 'GET') {
+            // GET requests shouldn't have a content-type since the body is
+            // empty.
+            $this->params = $_GET;
         }
     }
 }
