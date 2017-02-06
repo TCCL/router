@@ -117,8 +117,7 @@ class Router {
      *  should be an absolute path (under the Web root).
      */
     public function route($method,$uri,$basedir = null) {
-        $this->uri = parse_url($uri,PHP_URL_PATH);
-        $this->method = strtoupper($method);
+        $uri = parse_url($uri,PHP_URL_PATH);
 
         // Find path component relative to the specified base directory.
         if (!empty($basedir) && strpos($uri,$basedir) === 0) {
@@ -127,6 +126,9 @@ class Router {
                 $uri = '/';
             }
         }
+
+        $this->uri = $uri;
+        $this->method = strtoupper($method);
 
         // Get the correct set of request parameters.
         $this->parseInputParameters();
