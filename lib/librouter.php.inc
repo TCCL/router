@@ -59,6 +59,8 @@ class Router {
         'POST' => array(),
         'PUT' => array(),
         'DELETE' => array(),
+        'HEAD' => array( '/^.*$/' => array('Router','nop') ),
+        'PATCH' => array(),
     );
 
     /**
@@ -231,5 +233,9 @@ class Router {
             // empty.
             $this->params = $_GET;
         }
+    }
+
+    static private function nop() {
+        exit;
     }
 }
