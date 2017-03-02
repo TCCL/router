@@ -258,6 +258,12 @@ class Router {
             // empty.
             $this->params = $_GET;
         }
+        else if ($this->method == 'POST') {
+            $this->params = $_POST;
+        }
+        else {
+            $this->params = [];
+        }
     }
 
     static private function nop() {
