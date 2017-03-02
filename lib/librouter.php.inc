@@ -64,6 +64,14 @@ class Router {
     );
 
     /**
+     * The path leading up to the current application's routes. All routes are
+     * interpreted relative to this route.
+     *
+     * @var string
+     */
+    private $basePath;
+
+    /**
      * Request information:
      */
     public $matches = array();
@@ -120,6 +128,7 @@ class Router {
      */
     public function route($method,$uri,$basedir = null) {
         $uri = parse_url($uri,PHP_URL_PATH);
+        $this->basePath = $basedir;
 
         // Find path component relative to the specified base directory.
         if (!empty($basedir) && strpos($uri,$basedir) === 0) {
@@ -201,6 +210,22 @@ class Router {
         foreach ($this->headers as $key => $value) {
             header("$key: $value");
         }
+    }
+
+    /**
+     * Gets an absolute URI based on a relative one.
+     *
+     * @param string $component
+     *  The relative URI component
+     *
+     * @return string
+     */
+    public function getURI($component) {
+        // Ensure leading path separator in component.
+        if (empty($component) || $component[0] != '/') {
+            $component = "/$component";
+        }
+        return "$this->basePath$component";
     }
 
     private function parseInputParameters() {
