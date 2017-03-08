@@ -213,18 +213,40 @@ class Router {
     }
 
     /**
+     * Send a Location header to redirect the user agent to the requested
+     * URI. This function will terminate the program.
+     *
+     * @param string $uri
+     *  The URI to which to redirect the user agent.
+     * @param array $params
+     *  Any query parameters to include in the URI.
+     */
+    public function redirect($uri,$params = false) {
+        header('Location: ' . $this->getURI($uri,$params));
+        exit;
+    }
+
+    /**
      * Gets an absolute URI based on a relative one.
      *
      * @param string $component
      *  The relative URI component
+     * @param array $params
+     *  Any query parameters to include after the URI.
      *
      * @return string
      */
-    public function getURI($component) {
+    public function getURI($component,$params = false) {
         // Ensure leading path separator in component.
         if (empty($component) || $component[0] != '/') {
             $component = "/$component";
         }
+
+        // Add query parameters.
+        if (is_array($params)) {
+            $component .= '?' . http_build_query($params);
+        }
+
         return "$this->basePath$component";
     }
 
