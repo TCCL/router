@@ -1,11 +1,78 @@
-router - v2.0.1
+router - v3.0.0
 --------------------------------------------------------------------------------
 This repository provides a class library for routing requests to a PHP
 application. The library is designed to be small and minimal.
 
 Primary authors:
+
     Roger Gee <roger.gee@tulsalibrary.org>
 
 Other authors:
 
 --------------------------------------------------------------------------------
+Dependencies:
+
+    n/a
+
+--------------------------------------------------------------------------------
+Installation:
+
+This library is available as a composer package. Require 'tccl/router' in your
+composer.json file and then install.
+
+You must target at least v3.0.0 to use the composer package.
+
+--------------------------------------------------------------------------------
+Usage:
+
+Router provides a mechanism for routing control to a handler based on the input
+URI. It is very easy to setup and use. Just create an instance of type
+Router. The constructor takes a handler argument which is the default handler
+used when a route does not match;
+
+    function not_found(\TCCL\Router\Router $router) {
+        $router->statusCode = 404;
+        $router->contentType = CONTENT_TEXT;
+        $router->flush();
+
+        echo "Not found\n";
+    }
+
+    $router = \TCCL\Router\Router('not_found');
+
+Now you can add routers using the addRoute() method. Each route maps a route to
+a handler. A handler is either an object of a type that implements
+\TCCL\Router\RequestHandler or a callable. The callable is passed the
+\TCCL\Router\Router instance referring the request:
+
+Route URIs may be exact literal routes or PHP regex strings:
+
+    $router->addRoute('GET','/help','generate_help_page');
+    $router->addRoute('GET','/\/help\/topics\/([0-9]+)/','generate_help_topic');
+
+Any matches found upon successfully matching a regex path are set in the
+router's 'matches' property:
+
+    function generate_help_topic(\TCCL\Router\Router $router) {
+        $node = $router->matches[1]; // get second match (first is entire route)
+
+        // ...
+    }
+
+Finally we need to route the request. You will have to specify the
+URI/method. This is easily obtained via the superglobals set by the
+SAPI. Optionally you can specify a base path for the route. This is useful when
+your application runs under a subdirectory (i.e. you won't have to change your
+routes).
+
+Here is a routing that assumes every route is relative to the document root.
+
+    $router->route($_SERVER['REQUEST_METHOD'],$_SERVER['REQUEST_URI']);
+
+Here is routing that works under an arbitrary base path. This method assumes the
+file running the routing code is under the application route directory. Be
+careful if this file is a soft link referring to a file outside the application
+distribution (it won't work).
+
+    $basePath = substr(dirname(__FILE__),strlen($_SERVER['DOCUMENT_ROOT']));
+    $router->route($_SERVER['REQUEST_METHOD'],$_SERVER['REQUEST_URI'],$basePath);

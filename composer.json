@@ -1,0 +1,8 @@
+{
+    "name": "tccl/router",
+    "autoload": {
+        "psr-4": {
+            "TCCL\\Router\\": "lib"
+        }
+    }
+}
