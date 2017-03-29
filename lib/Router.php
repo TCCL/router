@@ -1,13 +1,17 @@
 <?php
 
 /**
- * router.php.inc
+ * Router.php
  *
  * This library provides an extremely simple request router. It is designed to
  * be utterly minimal.
  *
- * @package router
+ * @package tccl/router
  */
+
+namespace TCCL\Router;
+
+use Exception;
 
 /**
  * Define content-type constants for convenience.
@@ -17,20 +21,6 @@ define('CONTENT_HTML','text/html');
 define('CONTENT_JSON','application/json');
 define('CONTENT_FILE_DOWNLOAD','application/octet-stream');
 define('CONTENT_FORM_URLENCODED','application/x-www-form-urlencoded');
-
-/**
- * This interface represents a handler object. Class-based request handlers must
- * implement this interface.
- */
-interface RequestHandler {
-    /**
-     * This function should run the request handler.
-     *
-     * @param Router $router
-     *  The router instance invoking the request handler.
-     */
-    function run(Router $router);
-}
 
 /**
  * This class provides a Router object that is used to define request routes
