@@ -165,7 +165,7 @@ class Router {
             }
 
             // Make sure object's class implements RequestHandler.
-            if (!is_a($handler,'RequestHandler')) {
+            if (!is_a($handler,'\TCCL\Router\RequestHandler')) {
                 throw new Exception(__METHOD__.': request handler object must implement RequestHandler interface');
             }
 
