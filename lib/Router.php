@@ -240,7 +240,14 @@ class Router {
         return "$this->basePath$component";
     }
 
-    private function parseInputParameters() {
+    /**
+     * Gets the content type indicated by the request headers.
+     *
+     * @return string
+     *  The MIME type of the request as indicated by the client, or null if no
+     *  such value could be reliably determined.
+     */
+    public function getRequestType() {
         if (isset($_SERVER['CONTENT_TYPE'])) {
             $type = explode(';',$_SERVER['CONTENT_TYPE'])[0];
         }
@@ -250,6 +257,11 @@ class Router {
         else {
             $type = null;
         }
+        return $type;
+    }
+
+    private function parseInputParameters() {
+        $type = $this->getRequestType();
 
         if ($type == CONTENT_FORM_URLENCODED) {
             if ($this->method == 'POST') {
