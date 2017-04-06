@@ -23,9 +23,17 @@ composer.json file and then install.
 You must target at least v3.0.0 to use the composer package.
 
 --------------------------------------------------------------------------------
+Classes
+
+    TCCL\Router\Router
+        The core routing object type
+
+    TCCL\Router\RequestHandler
+        An abstract interface for class-based request handlers
+--------------------------------------------------------------------------------
 Usage:
 
-Router provides a mechanism for routing control to a handler based on the input
+Router provides a mechanism for routing control to a handler bdased on the input
 URI. It is very easy to setup and use. Just create an instance of type
 Router. The constructor takes a handler argument which is the default handler
 used when a route does not match;
@@ -76,3 +84,70 @@ distribution (it won't work).
 
     $basePath = substr(dirname(__FILE__),strlen($_SERVER['DOCUMENT_ROOT']));
     $router->route($_SERVER['REQUEST_METHOD'],$_SERVER['REQUEST_URI'],$basePath);
+--------------------------------------------------------------------------------
+Library Overview:
+
+    [TCCL\Router\RequestHandler]
+        run(Router $router)
+
+    [TCCL\Router\Router]
+        __construct($notFoundHandler)
+
+            Creates a new instance with the specified fallback handler for
+            non-existent routes
+
+        addRoute($method,$uri,$handler)
+
+            Adds a new route to the router; the handler is either a callable or
+            an object that implements the RequestHandler interface
+
+        route($method,$uri,$basedir)
+
+            Routes a request with the specified method and URI
+
+            The base directory specifies the base directory for requests; if
+            this value is non-empty, then the router will interpret URIs
+            relative to the base directory; for example:
+
+                in route table:
+
+                    "GET" "/A/B" ----> "handler1"
+
+                route "GET" "/base/A/B" with base directory "/base":
+
+                    execute "handler1" since "/base/A/B" matched URI "/A/B" in
+                    route table
+
+        addHeader($key,$value)
+
+            Adds header pair to list of headers; header info must be written
+            later with a call to flush()
+
+        flush()
+
+            Writes metadata to the output stream; this includes the response
+            code, content-type and any headers
+
+        redirect($uri,$params)
+
+            Forces a redirect
+
+            The URI will be evaluated relative to any configured base directory;
+            as such this function SHOULD be called in a request handler after a
+            call to route()
+
+            Any parameters are encoded and appended to the URI as query parameters
+
+        getURI($component,$params)
+
+            Gets a URI
+
+            The URI will have any configured base path prepended and any
+            parameters appended as a query string
+
+        getRequestType()
+
+            Gets the request content type
+
+            The SAPI must have provided this in $_SERVER['CONTENT_TYPE'] or
+            $_SERVER['HTTP_CONTENT_TYPE']
