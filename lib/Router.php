@@ -49,8 +49,8 @@ class Router {
         'POST' => array(),
         'PUT' => array(),
         'DELETE' => array(),
-        'HEAD' => array( '/^.*$/' => array('Router','nop') ),
         'PATCH' => array(),
+        'HEAD' => array('/^.*$/' => array('\TCCL\Router\Router','nop')),
     );
 
     /**
