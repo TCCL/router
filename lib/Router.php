@@ -23,6 +23,8 @@ define('CONTENT_FILE_DOWNLOAD','application/octet-stream');
 define('CONTENT_FORM_URLENCODED','application/x-www-form-urlencoded');
 
 /**
+ * Router
+ *
  * This class provides a Router object that is used to define request routes
  * for an application-backend.
  */
@@ -30,7 +32,7 @@ class Router {
     /**
      * This is the handler to call when no valid route is found.
      *
-     * @var handler (i.e. callable or RequestHandler)
+     * @var mixed (callable or RequestHandler)
      */
     private $notFound;
 
@@ -62,7 +64,7 @@ class Router {
     private $basePath;
 
     /**
-     * Request information:
+     * Request information: publicly available for reading.
      */
     public $matches = array();
     public $method;
@@ -70,7 +72,7 @@ class Router {
     public $params;
 
     /**
-     * Response information:
+     * Response information: publicly available for reading and/or writing.
      */
     public $statusCode = 200;
     public $contentType = CONTENT_HTML;
@@ -155,9 +157,8 @@ class Router {
         // Find and prepare handler for execution.
         if (!is_callable($handler)) {
             // Transform the handler into a callable. We assume that it may
-            // either be an object whose class implements
-            // RequestHandler. Otherwise it is a class name that implements
-            // RequestHandler.
+            // either be an object whose class implements RequestHandler.
+            // Otherwise it is a class name that implements RequestHandler.
 
             if (!is_object($handler)) {
                 // Assume $handler is a class name.
@@ -291,6 +292,6 @@ class Router {
     }
 
     static private function nop() {
-        exit;
+
     }
 }

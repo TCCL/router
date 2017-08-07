@@ -11,6 +11,8 @@
 namespace TCCL\Router;
 
 /**
+ * RequestHandler
+ *
  * This interface represents a handler object. Class-based request handlers must
  * implement this interface.
  */
