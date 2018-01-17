@@ -53,6 +53,7 @@ class Router {
         'DELETE' => array(),
         'PATCH' => array(),
         'HEAD' => array('/^.*$/' => array('\TCCL\Router\Router','nop')),
+        'OPTIONS' => array('/^.*$/' => array('\TCCL\Router\Router','nop')),
     );
 
     /**
@@ -92,17 +93,24 @@ class Router {
      * This function registers a new route. If the route already exists, then
      * the existing route is overwritten.
      *
-     * @param  string $method
-     *  The HTTP request method to handle
-     * @param  string $uri
-     *  The URI against which to match; this may be a literal string or regex
-     * @param  mixed $handler
+     * @param mixed $method
+     *  The HTTP request method to handle, or an array of such strings.
+     * @param string $uri
+     *  The URI against which to match; this may be a literal string or regex.
+     * @param mixed $handler
      *  Either a callable or a class that implements RequestHandler that
      *  represents the handler for the request
      */
     public function addRoute($method,$uri,$handler) {
         // Add the handler to the route table.
-        $this->routeTable[$method][$uri] = $handler;
+        if (is_array($method)) {
+            foreach ($method as $m) {
+                $this->routeTable[$m][$uri] = $handler;
+            }
+        }
+        else {
+            $this->routeTable[$method][$uri] = $handler;
+        }
     }
 
     /**
@@ -111,15 +119,15 @@ class Router {
      *
      * @param string $method
      *  The HTTP request method
-     * @param string $uri
-     *  The request URI
+     * @param string $requestURI
+     *  The request URI.
      * @param string $basedir
      *  The base directory of the requests. URIs are transformed to be relative
      *  to this directory so that routes can happen under subdirectories. This
      *  should be an absolute path (under the Web root).
      */
-    public function route($method,$uri,$basedir = null) {
-        $uri = parse_url($uri,PHP_URL_PATH);
+    public function route($method,$requestURI,$basedir = null) {
+        $uri = parse_url($requestURI,PHP_URL_PATH);
         $this->basePath = $basedir;
 
         // Find path component relative to the specified base directory.
@@ -136,45 +144,7 @@ class Router {
         // Get the correct set of request parameters.
         $this->parseInputParameters();
 
-        // Try to see if a literal match works.
-        if (isset($this->routeTable[$this->method][$this->uri])) {
-            $handler = $this->routeTable[$this->method][$this->uri];
-        }
-        else {
-            // Go through each item under the specified method. Try to interpret
-            // the URI as a regex and perform a regex match.
-            foreach ($this->routeTable[$this->method] as $regex => $hand) {
-                if (@preg_match($regex,$this->uri,$this->matches)) {
-                    $handler = $hand;
-                    break;
-                }
-            }
-            if (!isset($handler)) {
-                $handler = $this->notFound;
-            }
-        }
-
-        // Find and prepare handler for execution.
-        if (!is_callable($handler)) {
-            // Transform the handler into a callable. We assume that it may
-            // either be an object whose class implements RequestHandler.
-            // Otherwise it is a class name that implements RequestHandler.
-
-            if (!is_object($handler)) {
-                // Assume $handler is a class name.
-                $handler = new $handler;
-            }
-
-            // Make sure object's class implements RequestHandler.
-            if (!is_a($handler,'\TCCL\Router\RequestHandler')) {
-                throw new Exception(__METHOD__.': request handler object must implement RequestHandler interface');
-            }
-
-            $handler = array($handler,'run');
-        }
-
-        // Invoke the handler.
-        $handler($this);
+        $this->routeImpl();
     }
 
     /**
@@ -289,6 +259,71 @@ class Router {
         else {
             $this->params = [];
         }
+    }
+
+    private function copyFrom(Router $other) {
+        // Copy request information.
+        $this->basePath = $other->basePath;
+        $this->method = $other->method;
+        $this->uri = $other->uri;
+        $this->params = $other->params;
+
+        // Inherit headers in case any were specified globally.
+        $this->headers = array_merge($this->headers,$other->headers);
+    }
+
+    private function routeImpl() {
+        // Try to see if a literal match works.
+        if (isset($this->routeTable[$this->method][$this->uri])) {
+            $handler = $this->routeTable[$this->method][$this->uri];
+        }
+        else {
+            // Go through each item under the specified method. Try to interpret
+            // the URI as a regex and perform a regex match.
+            foreach ($this->routeTable[$this->method] as $regex => $hand) {
+                if (@preg_match($regex,$this->uri,$this->matches)) {
+                    $handler = $hand;
+                    break;
+                }
+            }
+            if (!isset($handler)) {
+                $handler = $this->notFound;
+            }
+        }
+
+        // Find and prepare handler for execution.
+        if (!is_callable($handler)) {
+            // Transform the handler into a callable. We assume that it may
+            // either be an object whose class implements RequestHandler.
+            // Otherwise it is a class name that implements
+            // RequestHandler. Alternatively, the class/object may derive from
+            // Router, in which case we delegate control to that router
+            // instance.
+
+            if (!is_object($handler)) {
+                // Assume $handler is a class name.
+                $handler = new $handler;
+            }
+
+            if (is_a($handler,'\TCCL\Router\Router')) {
+                // If the handler is another Router instance, forward the
+                // request to that router.
+                $handler->copyFrom($this);
+
+                return $handler->routeImpl();
+            }
+
+            // Make sure object's class implements RequestHandler.
+            if (!is_a($handler,'\TCCL\Router\RequestHandler')) {
+                throw new Exception(__METHOD__.': request handler object must '
+                                    . 'implement RequestHandler interface');
+            }
+
+            $handler = array($handler,'run');
+        }
+
+        // Invoke the handler.
+        $handler($this);
     }
 
     static private function nop() {
