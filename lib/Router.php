@@ -231,6 +231,24 @@ class Router {
         return $type;
     }
 
+    /**
+     * Gets the named request parameter.
+     *
+     * @param $name string
+     *  The request parameter name.
+     * @param $default mixed
+     *  A value to return if the request parameter is not found.
+     *
+     * @return string
+     */
+    public function getRequestParam($name,$default = null) {
+        if (isset($this->params[$name])) {
+            return $this->params[$name];
+        }
+
+        return $default;
+    }
+
     private function parseInputParameters() {
         $type = $this->getRequestType();
 
