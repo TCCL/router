@@ -1,4 +1,4 @@
-router - v3.1.1
+router - v3.2.0
 --------------------------------------------------------------------------------
 This repository provides a class library for routing requests to a PHP
 application. The library is designed to be small and minimal.
@@ -99,7 +99,30 @@ Library Overview:
         addRoute($method,$uri,$handler)
 
             Adds a new route to the router; the handler is either a callable or
-            an object that implements the RequestHandler interface
+            a class name/object that implements the RequestHandler interface or
+            extends the Router class.
+
+            The $method may be an array of methods or
+            \TCCL\Router\Router::HTTP_ALL for all request methods. Supported
+            methods include 'GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD' and
+            'OPTIONS'.
+
+            The $uri is either a literal string route or a regex identifying a
+            set of routes to match. Any regex matches will be placed in
+            $router->matches. The special route '/' identifies an exact match of
+            the base path, which may or may not include a trailing '/'.
+
+            If the handler is a Router subclass/instance, then your $uri should
+            be a regex (and exception will be thrown if not). The global match
+            will specify the new base path for the subrouter. This means your
+            $uri should always specify the base path for the subrouter. For
+            example:
+
+                $router->addRoute(Router::HTTP_ALL,'/\/api/','APIRouter');
+
+            In this example, $router will create a subrouter of type APIRouter
+            for any path under "/api" (including "/api"). All paths in APIRouter
+            will be relative to "/api".
 
         route($method,$uri,$basedir)
 
@@ -151,3 +174,8 @@ Library Overview:
 
             The SAPI must have provided this in $_SERVER['CONTENT_TYPE'] or
             $_SERVER['HTTP_CONTENT_TYPE']
+
+        getRequestParam($name,$default = null)
+
+            Gets the named request parameter, returning $default if it is not
+            found.

@@ -29,10 +29,26 @@ define('CONTENT_FORM_URLENCODED','application/x-www-form-urlencoded');
  * for an application-backend.
  */
 class Router {
+    const HTTP_GET = 'GET';
+    const HTTP_POST = 'POST';
+    const HTTP_PUT = 'PUT';
+    const HTTP_DELETE = 'DELETE';
+    const HTTP_PATCH = 'PATCH';
+    const HTTP_HEAD = 'HEAD';
+    const HTTP_OPTIONS = 'OPTIONS';
+    const HTTP_ALL = '__ALL__';
+
+    /**
+     * A route entry that does nothing.
+     *
+     * @var array
+     */
+    private static $DEFAULT_ROUTE = ['/^.*$/' => 'TCCL\Router\Router::nop'];
+
     /**
      * This is the handler to call when no valid route is found.
      *
-     * @var mixed (callable or RequestHandler)
+     * @var mixed (callable, RequestHandler or Router)
      */
     private $notFound;
 
@@ -40,7 +56,8 @@ class Router {
      * This is the route table that maps request URIs to a handler. The mappings
      * are sorted into buckets by request method. Each URI can either be a
      * literal string or a regex. Handlers are either PHP callables or a class
-     * (or instance of a class) that implements RequestHandler.
+     * (or instance of a class) that implements RequestHandler or extends
+     * Router.
      *
      * The callables implement the same interface as RequestHandler::run.
      *
@@ -52,13 +69,13 @@ class Router {
         'PUT' => array(),
         'DELETE' => array(),
         'PATCH' => array(),
-        'HEAD' => array('/^.*$/' => array('\TCCL\Router\Router','nop')),
-        'OPTIONS' => array('/^.*$/' => array('\TCCL\Router\Router','nop')),
+        'HEAD' => array(),
+        'OPTIONS' => array(),
     );
 
     /**
-     * The path leading up to the current application's routes. All routes are
-     * interpreted relative to this route.
+     * The path used to determine the basePath to any URI such as one generated
+     * with getURI().
      *
      * @var string
      */
@@ -78,6 +95,14 @@ class Router {
     public $statusCode = 200;
     public $contentType = CONTENT_HTML;
     public $headers = array();
+
+    /**
+     * A request handler callback dedicated to doing nothing. This is used to
+     * define a default route.
+     */
+    public static function nop() {
+
+    }
 
     /**
      * Constructs a new Router object.
@@ -102,9 +127,16 @@ class Router {
      *  represents the handler for the request
      */
     public function addRoute($method,$uri,$handler) {
+        if ($method == self::HTTP_ALL) {
+            $method = array_keys($this->routeTable);
+        }
+
         // Add the handler to the route table.
         if (is_array($method)) {
             foreach ($method as $m) {
+                if (!isset($this->routeTable[$m])) {
+                    throw new Exception(__METHOD__.": bad request method '$m'");
+                }
                 $this->routeTable[$m][$uri] = $handler;
             }
         }
@@ -119,31 +151,19 @@ class Router {
      *
      * @param string $method
      *  The HTTP request method
-     * @param string $requestURI
+     * @param string $uri
      *  The request URI.
      * @param string $basedir
      *  The base directory of the requests. URIs are transformed to be relative
      *  to this directory so that routes can happen under subdirectories. This
      *  should be an absolute path (under the Web root).
      */
-    public function route($method,$requestURI,$basedir = null) {
-        $uri = parse_url($requestURI,PHP_URL_PATH);
-        $this->basePath = $basedir;
-
-        // Find path component relative to the specified base directory.
-        if (!empty($basedir) && strpos($uri,$basedir) === 0) {
-            $uri = substr($uri,strlen($basedir));
-            if (empty($uri)) {
-                $uri = '/';
-            }
-        }
-
-        $this->uri = $uri;
+    public function route($method,$uri,$basedir = null) {
+        $this->basePath = rtrim($basedir,'/');
+        $this->uri = self::get_relative_path($this->basePath,parse_url($uri,PHP_URL_PATH));
         $this->method = strtoupper($method);
 
-        // Get the correct set of request parameters.
         $this->parseInputParameters();
-
         $this->routeImpl();
     }
 
@@ -204,7 +224,7 @@ class Router {
         }
 
         // Add query parameters.
-        if (is_array($params)) {
+        if (!empty($params) && is_array($params)) {
             $component .= '?' . http_build_query($params);
         }
 
@@ -281,9 +301,19 @@ class Router {
 
     private function copyFrom(Router $other) {
         // Copy request information.
+        if (isset($other->matches[0])) {
+            // Interpret the full regex match as the new base path for the
+            // subrouter's URI. However do not update the $basePath member
+            // property so that the subrouter can still return URIs relative to
+            // the original application base path.
+
+            $this->uri = self::get_relative_path($other->matches[0],$other->uri);
+        }
+        else {
+            $this->uri = $other->uri;
+        }
         $this->basePath = $other->basePath;
         $this->method = $other->method;
-        $this->uri = $other->uri;
         $this->params = $other->params;
 
         // Inherit headers in case any were specified globally.
@@ -291,6 +321,12 @@ class Router {
     }
 
     private function routeImpl() {
+        // Augment HEAD and OPTIONS tables with the default route so that there
+        // is basic support of these methods. We do this here so that any
+        // user-supplied routes have precedence.
+        $this->routeTable[self::HTTP_HEAD] += self::$DEFAULT_ROUTE;
+        $this->routeTable[self::HTTP_OPTIONS] += self::$DEFAULT_ROUTE;
+
         // Try to see if a literal match works.
         if (isset($this->routeTable[$this->method][$this->uri])) {
             $handler = $this->routeTable[$this->method][$this->uri];
@@ -325,9 +361,15 @@ class Router {
 
             if (is_a($handler,'\TCCL\Router\Router')) {
                 // If the handler is another Router instance, forward the
-                // request to that router.
-                $handler->copyFrom($this);
+                // request to that router. It will function as a subrouter. A
+                // full regex match should be available for a subrouter route
+                // that will server as the new base path.
 
+                if (!isset($this->matches[0])) {
+                    throw new Exception(__METHOD__.': expected regex match for subrouter');
+                }
+
+                $handler->copyFrom($this);
                 return $handler->routeImpl();
             }
 
@@ -344,7 +386,15 @@ class Router {
         $handler($this);
     }
 
-    static private function nop() {
+    private static function get_relative_path($basedir,$uri) {
+        // Find path component relative to the specified base directory.
+        if (!empty($basedir) && strpos($uri,$basedir) === 0) {
+            $uri = substr($uri,strlen($basedir));
+            if (empty($uri)) {
+                $uri = '/';
+            }
+        }
 
+        return $uri;
     }
 }
