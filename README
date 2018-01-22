@@ -1,4 +1,4 @@
-router - v3.2.0
+router - v4.0.0
 --------------------------------------------------------------------------------
 This repository provides a class library for routing requests to a PHP
 application. The library is designed to be small and minimal.
@@ -40,7 +40,7 @@ used when a route does not match;
 
     function not_found(\TCCL\Router\Router $router) {
         $router->statusCode = 404;
-        $router->contentType = CONTENT_TEXT;
+        $router->contentType = \TCCL\Router\Router::CONTENT_TEXT;
         $router->flush();
 
         echo "Not found\n";

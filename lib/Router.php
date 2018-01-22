@@ -4,7 +4,7 @@
  * Router.php
  *
  * This library provides an extremely simple request router. It is designed to
- * be utterly minimal.
+ * be functional and mostly minimal.
  *
  * @package tccl/router
  */
@@ -14,21 +14,15 @@ namespace TCCL\Router;
 use Exception;
 
 /**
- * Define content-type constants for convenience.
- */
-define('CONTENT_TEXT','text/plain');
-define('CONTENT_HTML','text/html');
-define('CONTENT_JSON','application/json');
-define('CONTENT_FILE_DOWNLOAD','application/octet-stream');
-define('CONTENT_FORM_URLENCODED','application/x-www-form-urlencoded');
-
-/**
  * Router
  *
  * This class provides a Router object that is used to define request routes
  * for an application-backend.
  */
 class Router {
+    /**
+     * HTTP Method Constants
+     */
     const HTTP_GET = 'GET';
     const HTTP_POST = 'POST';
     const HTTP_PUT = 'PUT';
@@ -39,11 +33,27 @@ class Router {
     const HTTP_ALL = '__ALL__';
 
     /**
+     * Content-Type Constants
+     */
+    const CONTENT_TEXT = 'text/plain';
+    const CONTENT_HTML = 'text/html';
+    const CONTENT_JSON = 'application/json';
+    const CONTENT_FILE_DOWNLOAD = 'application/octet-stream';
+    const CONTENT_FORM_URLENCODED = 'application/x-www-form-urlencoded';
+
+    /**
      * A route entry that does nothing.
      *
      * @var array
      */
     private static $DEFAULT_ROUTE = ['/^.*$/' => 'TCCL\Router\Router::nop'];
+
+    /**
+     * Stores the Router that last executed routeImpl().
+     *
+     * @var Router
+     */
+    private static $executingRouter;
 
     /**
      * This is the handler to call when no valid route is found.
@@ -93,7 +103,7 @@ class Router {
      * Response information: publicly available for reading and/or writing.
      */
     public $statusCode = 200;
-    public $contentType = CONTENT_HTML;
+    public $contentType = self::CONTENT_HTML;
     public $headers = array();
 
     /**
@@ -102,6 +112,15 @@ class Router {
      */
     public static function nop() {
 
+    }
+
+    /**
+     * Gets the Router instance that last executed.
+     *
+     * @return Router
+     */
+    public static function getExecutingRouter() {
+        return self::$executingRouter;
     }
 
     /**
@@ -272,7 +291,7 @@ class Router {
     private function parseInputParameters() {
         $type = $this->getRequestType();
 
-        if ($type == CONTENT_FORM_URLENCODED) {
+        if ($type == self::CONTENT_FORM_URLENCODED) {
             if ($this->method == 'POST') {
                 $this->params = $_POST;
             }
@@ -283,7 +302,7 @@ class Router {
                 parse_str($input,$this->params);
             }
         }
-        else if ($type == CONTENT_JSON) {
+        else if ($type == self::CONTENT_JSON) {
             $this->params = json_decode(file_get_contents('php://input'),true);
         }
         else if ($this->method == 'GET') {
@@ -321,6 +340,9 @@ class Router {
     }
 
     private function routeImpl() {
+        // Set executing router.
+        self::$executingRouter = $this;
+
         // Augment HEAD and OPTIONS tables with the default route so that there
         // is basic support of these methods. We do this here so that any
         // user-supplied routes have precedence.
