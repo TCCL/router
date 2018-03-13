@@ -46,7 +46,7 @@ class Router {
      *
      * @var array
      */
-    private static $DEFAULT_ROUTE = ['/^.*$/' => 'TCCL\Router\Router::nop'];
+    private static $DEFAULT_ROUTE = ['/^.*$/' => ['TCCL\Router\Router','nop']];
 
     /**
      * Stores the Router that last executed routeImpl().
