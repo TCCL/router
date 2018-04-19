@@ -1,4 +1,4 @@
-router - v4.0.1
+router - v4.1.0
 --------------------------------------------------------------------------------
 This repository provides a class library for routing requests to a PHP
 application. The library is designed to be small and minimal.
@@ -30,6 +30,15 @@ Classes
 
     TCCL\Router\RequestHandler
         An abstract interface for class-based request handlers
+
+    TCCL\Router\RouterException
+        An 'Exception' subclass for handling request handler errors
+
+Traits
+
+    TCCL\Router\RouterExceptionHandling
+        Optional trait to add to router subclass for exception handling
+
 --------------------------------------------------------------------------------
 Usage:
 
@@ -179,3 +188,24 @@ Library Overview:
 
             Gets the named request parameter, returning $default if it is not
             found.
+
+    [TCCL\Router\RouterExceptionHandling]
+
+        Use the RouterExceptionHandling trait to add simple exception handling
+        to a custom router. For example:
+
+            class MyRouter extends \TCCL\Router\Router {
+                use \TCCL\Router\RouterExceptionHandling;
+
+                protected function handleServerError(Exception $ex) {
+                    // ...
+                }
+
+                protected function handleRouterError(RouterException $ex) {
+                    // ...
+                }
+            }
+
+        In a handler, you can throw a RouterException, assigning the exception
+        object an HTTP status code and error message. You then can support the
+        handling of multiple kinds of errors in one location in your codebase.
