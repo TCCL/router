@@ -3,8 +3,6 @@
 /**
  * RequestHandler.php
  *
- * This file is a part of tccl/router.
- *
  * @package tccl/router
  */
 
@@ -23,5 +21,5 @@ interface RequestHandler {
      * @param Router $router
      *  The router instance invoking the request handler.
      */
-    function run(Router $router);
+    public function run(Router $router);
 }
