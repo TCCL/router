@@ -353,7 +353,7 @@ class Router {
         if (isset($this->routeTable[$this->method][$this->uri])) {
             $handler = $this->routeTable[$this->method][$this->uri];
         }
-        else {
+        else if (isset($this->routeTable[$this->method])) {
             // Go through each item under the specified method. Try to interpret
             // the URI as a regex and perform a regex match.
             foreach ($this->routeTable[$this->method] as $regex => $hand) {
@@ -365,6 +365,13 @@ class Router {
             if (!isset($handler)) {
                 $handler = $this->notFound;
             }
+        }
+        else {
+            // The request method is unrecognized. Return HTTP 501 Not
+            // Implemented.
+            $this->statusCode = 501;
+            $this->flush();
+            exit(1);
         }
 
         // Find and prepare handler for execution.
