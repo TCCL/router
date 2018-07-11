@@ -140,7 +140,8 @@ class Router {
      * @param mixed $method
      *  The HTTP request method to handle, or an array of such strings.
      * @param string $uri
-     *  The URI against which to match; this may be a literal string or regex.
+     *  The URI pattern against which the request URI is matched; this may be a
+     *  literal string or regex.
      * @param mixed $handler
      *  Either a callable or a class that implements RequestHandler that
      *  represents the handler for the request
@@ -161,6 +162,26 @@ class Router {
         }
         else {
             $this->routeTable[$method][$uri] = $handler;
+        }
+    }
+
+    /**
+     * Adds a list of routes from a table.
+     *
+     * @param array $table
+     *  An associative array mapping HTTP request method => URI pattern =>
+     *  request handler. The URI pattern is either a literal string or a
+     *  regex. The handler is a callable or class that implements
+     *  RequestHandler.
+     */
+    public function addRoutesFromTable(array $table) {
+        foreach ($table as $method => $bucket) {
+            if (!isset($this->routeTable[$method])) {
+                $this->routeTable[$method] = $bucket;
+            }
+            else {
+                $this->routeTable[$method] += $bucket;
+            }
         }
     }
 
@@ -363,6 +384,7 @@ class Router {
                 }
             }
             if (!isset($handler)) {
+                $this->statusCode = 404;
                 $handler = $this->notFound;
             }
         }
