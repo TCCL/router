@@ -367,6 +367,17 @@ class Router {
         return $handler;
     }
 
+    /**
+     * Handles the result of the route handler operation. The canonical
+     * implementation does nothing.
+     *
+     * @param mixed $result
+     *  The result of the route handler operation.
+     */
+    protected function resultHandler($result) {
+        // Do nothing...
+    }
+
     private function parseInputParameters() {
         $type = $this->getRequestType();
 
@@ -457,8 +468,8 @@ class Router {
         // Create the handler.
         $handler = $this->createHandler($handler);
 
-        // Invoke the handler.
-        $handler($this);
+        // Invoke the handler. Pass any result value to the result handler.
+        $this->resultHandler($handler($this));
     }
 
     private static function get_relative_path($basedir,$uri) {
