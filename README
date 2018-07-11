@@ -1,4 +1,4 @@
-router - v4.1.0
+router - v4.2.0
 --------------------------------------------------------------------------------
 This repository provides a class library for routing requests to a PHP
 application. The library is designed to be small and minimal.
@@ -6,8 +6,6 @@ application. The library is designed to be small and minimal.
 Primary authors:
 
     Roger Gee <roger.gee@tulsalibrary.org>
-
-Other authors:
 
 --------------------------------------------------------------------------------
 Dependencies:
@@ -39,16 +37,21 @@ Traits
     TCCL\Router\RouterExceptionHandling
         Optional trait to add to router subclass for exception handling
 
+    TCCL\Router\RouterMethodHandling
+        Optional trait to add method handling support to a router subclass
+
+    TCCL\Router\RouterRESTHandling
+        Optional trait to add REST API support to a router subclass
+
 --------------------------------------------------------------------------------
 Usage:
 
-Router provides a mechanism for routing control to a handler bdased on the input
+Router provides a mechanism for routing control to a handler based on the input
 URI. It is very easy to setup and use. Just create an instance of type
 Router. The constructor takes a handler argument which is the default handler
 used when a route does not match;
 
     function not_found(\TCCL\Router\Router $router) {
-        $router->statusCode = 404;
         $router->contentType = \TCCL\Router\Router::CONTENT_TEXT;
         $router->flush();
 
@@ -57,10 +60,23 @@ used when a route does not match;
 
     $router = \TCCL\Router\Router('not_found');
 
-Now you can add routers using the addRoute() method. Each route maps a route to
-a handler. A handler is either an object of a type that implements
-\TCCL\Router\RequestHandler or a callable. The callable is passed the
-\TCCL\Router\Router instance referring the request:
+Now you can add routes using the addRoute() or addRoutesFromTable()
+methods. Each route maps a request method and URI to a handler description. A
+handler description identifies an executable context that can handle the route
+(i.e. the handler). The canonical Router implementation supports the following
+handler descriptions:
+
+    * PHP callable
+
+    * Class name of class that implements \TCCL\Router\RequestHandler or
+      \TCCL\Router\Router
+
+    * Object instance of class that implements \TCCL\Router\RequestHandler or
+      \TCCL\Router\Router
+
+If a RequestHandler is specified, the Router will invoke its run() method. If a
+Router is specified, then the Router will pass handling to an instance of that
+Router. (This is a special case that allows you to define subrouters.)
 
 Route URIs may be exact literal routes or PHP regex strings:
 
@@ -77,10 +93,10 @@ router's 'matches' property:
     }
 
 Finally we need to route the request. You will have to specify the
-URI/method. This is easily obtained via the superglobals set by the
-SAPI. Optionally you can specify a base path for the route. This is useful when
-your application runs under a subdirectory (i.e. you won't have to change your
-routes).
+URI/method. This is easily obtained via the superglobals set by whatever PHP
+SAPI you are using. Optionally you can specify a base path for the route. This
+is useful when your application runs under a subdirectory (i.e. you won't have
+to change your routes).
 
 Here is a routing that assumes every route is relative to the document root.
 
@@ -132,6 +148,17 @@ Library Overview:
             In this example, $router will create a subrouter of type APIRouter
             for any path under "/api" (including "/api"). All paths in APIRouter
             will be relative to "/api".
+
+        addRoutesFromTable(array $table)
+
+            Adds a set of routes from the specified table into the router. This
+            allows you to import a bunch of routes at once.
+
+            The format of the $table array is an associative array that maps a
+            request method to a request URI pattern to a handler
+            description. For example:
+
+                $table = ['GET' => ['/foo' => 'MyHandler']]
 
         route($method,$uri,$basedir)
 
@@ -189,6 +216,19 @@ Library Overview:
             Gets the named request parameter, returning $default if it is not
             found.
 
+        [protected] createHandler($handler)
+
+            May be overridden by custom routers to provide new route handler
+            description formats. A derived implementation should always call
+            down into the base implementation defined in Router.
+
+        [protected] resultHandler($result)
+
+            Handles the result of the route handler operation (i.e. the value
+            returned by a handler). The canonical implementation does nothing
+            with this value; however a derived implementation can override this
+            method to handle a return value in some way.
+
     [TCCL\Router\RouterExceptionHandling]
 
         Use the RouterExceptionHandling trait to add simple exception handling
@@ -209,3 +249,27 @@ Library Overview:
         In a handler, you can throw a RouterException, assigning the exception
         object an HTTP status code and error message. You then can support the
         handling of multiple kinds of errors in one location in your codebase.
+
+    [TCCL\Router\RouterMethodHandling]
+
+        Use the RouterMethodHandler trait to add method handler support to a
+        custom router. This allows you to use handler descriptions like the
+        following:
+
+            "ClassName::MethodName"
+
+        For example:
+
+            $router->addRoute('GET','/foo','MyHandler::foo');
+
+    [TCCL\Router\RouterRESTHandling]
+
+        Use the RouterRESTHandling trait to add support for writing JSON-based
+        REST API routers. A router that absorbs this trait will automatically
+        write JSON payloads that were returned from request handlers. If NULL is
+        returned from a request handler, an HTTP 204 "No Content" message is
+        generated. To prevent the functionality from writing to output, return
+        FALSE.
+
+        The trait also provides basic functionality for writing JSON objects and
+        other common REST API responses.
