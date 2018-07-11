@@ -309,6 +309,64 @@ class Router {
         return $default;
     }
 
+    /**
+     * Creates an executable handler from the provided handler description. A
+     * derived Router implementation may override this method. However it should
+     * call back down to the base class method to preserve the canonical
+     * behavior.
+     *
+     * @param mixed $handler
+     *  Any handler description provided by the user. The canonical
+     *  implementation (seen below) supports callables and classes that are
+     *  derived from \TCCL\Router\RequestHandler.
+     *
+     * @return callable
+     *  A callable that is invoked by this router to handle a request. The
+     *  callable will be passed the executing router as its sole parameter.
+     */
+    protected function createHandler($handler) {
+        // Straight callables are just forwarded directly.
+        if (is_callable($handler)) {
+            return $handler;
+        }
+
+        // Transform the handler into a callable. We assume that it may
+        // either be an object whose class implements RequestHandler.
+        // Otherwise it is a class name that implements
+        // RequestHandler. Alternatively, the class/object may derive from
+        // Router, in which case we delegate control to that router
+        // instance.
+
+        if (!is_object($handler)) {
+            // Assume $handler is a class name.
+            $handler = new $handler;
+        }
+
+        if (is_a($handler,'\TCCL\Router\Router')) {
+            // If the handler is another Router instance, forward the
+            // request to that router. It will function as a subrouter. A
+            // full regex match should be available for a subrouter route
+            // that will serve as the new base path.
+
+            if (!isset($this->matches[0])) {
+                throw new Exception(__METHOD__.': expected regex match for subrouter');
+            }
+
+            $handler->copyFrom($this);
+            return $handler->routeImpl();
+        }
+
+        // Make sure object's class implements RequestHandler.
+        if (!is_a($handler,'\TCCL\Router\RequestHandler')) {
+            throw new Exception(__METHOD__.': request handler object must '
+                                . 'implement RequestHandler interface');
+        }
+
+        $handler = array($handler,'run');
+
+        return $handler;
+    }
+
     private function parseInputParameters() {
         $type = $this->getRequestType();
 
@@ -396,42 +454,8 @@ class Router {
             exit(1);
         }
 
-        // Find and prepare handler for execution.
-        if (!is_callable($handler)) {
-            // Transform the handler into a callable. We assume that it may
-            // either be an object whose class implements RequestHandler.
-            // Otherwise it is a class name that implements
-            // RequestHandler. Alternatively, the class/object may derive from
-            // Router, in which case we delegate control to that router
-            // instance.
-
-            if (!is_object($handler)) {
-                // Assume $handler is a class name.
-                $handler = new $handler;
-            }
-
-            if (is_a($handler,'\TCCL\Router\Router')) {
-                // If the handler is another Router instance, forward the
-                // request to that router. It will function as a subrouter. A
-                // full regex match should be available for a subrouter route
-                // that will server as the new base path.
-
-                if (!isset($this->matches[0])) {
-                    throw new Exception(__METHOD__.': expected regex match for subrouter');
-                }
-
-                $handler->copyFrom($this);
-                return $handler->routeImpl();
-            }
-
-            // Make sure object's class implements RequestHandler.
-            if (!is_a($handler,'\TCCL\Router\RequestHandler')) {
-                throw new Exception(__METHOD__.': request handler object must '
-                                    . 'implement RequestHandler interface');
-            }
-
-            $handler = array($handler,'run');
-        }
+        // Create the handler.
+        $handler = $this->createHandler($handler);
 
         // Invoke the handler.
         $handler($this);
