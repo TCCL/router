@@ -322,7 +322,9 @@ class Router {
      *
      * @return callable
      *  A callable that is invoked by this router to handle a request. The
-     *  callable will be passed the executing router as its sole parameter.
+     *  callable will be passed the executing router as its sole parameter. If
+     *  the function returns NULL, then the route was handled by a subrouter and
+     *  no further action is necessary.
      */
     protected function createHandler($handler) {
         // Straight callables are just forwarded directly.
@@ -353,7 +355,8 @@ class Router {
             }
 
             $handler->copyFrom($this);
-            return $handler->routeImpl();
+            $handler->routeImpl();
+            return;
         }
 
         // Make sure object's class implements RequestHandler.
@@ -465,8 +468,12 @@ class Router {
             exit(1);
         }
 
-        // Create the handler.
+        // Create the handler. If no handler was created, then we assume the
+        // route was handled elsewhere.
         $handler = $this->createHandler($handler);
+        if (!isset($handler)) {
+            return;
+        }
 
         // Invoke the handler. Pass any result value to the result handler.
         $this->resultHandler($handler($this));
