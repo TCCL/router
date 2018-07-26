@@ -199,7 +199,7 @@ class Router {
      *  should be an absolute path (under the Web root).
      */
     public function route($method,$uri,$basedir = null) {
-        $this->basePath = rtrim($basedir,'/');
+        $this->setBasePath($basedir);
         $this->uri = self::get_relative_path($this->basePath,parse_url($uri,PHP_URL_PATH));
         $this->method = strtoupper($method);
 
@@ -379,6 +379,17 @@ class Router {
      */
     protected function resultHandler($result) {
         // Do nothing...
+    }
+
+    /**
+     * Sets the implicit base path used to prefix any URI generated with the
+     * Router instance (such as via getURI()).
+     *
+     * @param string $basedir
+     *  The basedir to set.
+     */
+    final protected function setBasePath($basedir) {
+        $this->basePath = rtrim($basedir,'/');
     }
 
     private function parseInputParameters() {
