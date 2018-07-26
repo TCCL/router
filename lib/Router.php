@@ -199,7 +199,12 @@ class Router {
      *  should be an absolute path (under the Web root).
      */
     public function route($method,$uri,$basedir = null) {
-        $this->setBasePath($basedir);
+        // Apply the base path if set or if an existing base path was not in
+        // place.
+        if (isset($basedir) || !isset($this->basePath)) {
+            $this->setBasePath($basedir);
+        }
+
         $this->uri = self::get_relative_path($this->basePath,parse_url($uri,PHP_URL_PATH));
         $this->method = strtoupper($method);
 
