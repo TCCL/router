@@ -394,6 +394,10 @@ class Router {
      *  The basedir to set.
      */
     final protected function setBasePath($basedir) {
+        // Replace all backslashes with forward slashes. This allows the
+        // implementation to work on MS Windows.
+        $basedir = str_replace('\\','/',$basedir);
+
         $this->basePath = rtrim($basedir,'/');
     }
 
