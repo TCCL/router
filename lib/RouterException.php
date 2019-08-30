@@ -21,7 +21,7 @@ class RouterException extends Exception {
     private $reason;
 
     /**
-     * Creates a new WebconfException.
+     * Creates a new RouterException.
      *
      * @param int $statusCode
      *  The HTTP status code
