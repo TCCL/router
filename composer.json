@@ -13,5 +13,10 @@
         "psr-4": {
             "TCCL\\Router\\": "lib"
         }
+    },
+    "require": {
+        "php": ">=5.6.0",
+        "ext-pcre": "*",
+        "ext-json": "*"
     }
 }
