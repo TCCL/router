@@ -508,6 +508,10 @@ class Router {
             }
         }
 
+        if ($uri[0] != '/') {
+            $uri = "/$uri";
+        }
+
         return $uri;
     }
 }
