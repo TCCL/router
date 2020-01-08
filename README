@@ -1,4 +1,4 @@
-router - v4.3.1
+router - v4.4.0
 --------------------------------------------------------------------------------
 This repository provides a class library for routing requests to a PHP
 application. The library is designed to be small and minimal.
@@ -43,8 +43,8 @@ Usage:
 
 Router provides a mechanism for routing control to a handler based on the input
 URI. It is very easy to setup and use. Just create an instance of type
-Router. The constructor takes a handler argument which is the default handler
-used when a route does not match;
+TCCL\Router\Router. The constructor takes a handler argument which is the
+default handler used when a route does not match:
 
     function not_found(\TCCL\Router\Router $router) {
         $router->contentType = \TCCL\Router\Router::CONTENT_TEXT;
@@ -69,9 +69,10 @@ handler descriptions:
     * Object instance of class that implements \TCCL\Router\RequestHandler or
       \TCCL\Router\Router
 
-If a RequestHandler is specified, the Router will invoke its run() method. If a
-Router is specified, then the Router will pass handling to an instance of that
-Router. (This is a special case that allows you to define subrouters.)
+If a TCCL\Router\RequestHandler is specified, the Router will invoke its run()
+method. If a TCCL\Router\Router is specified, then the Router will pass handling
+to an instance of that Router. (This is a special case that allows you to define
+subrouters.)
 
 Route URIs may be exact literal routes or PHP regex strings:
 
@@ -104,6 +105,25 @@ distribution (it won't work).
 
     $basePath = substr(dirname(__FILE__),strlen($_SERVER['DOCUMENT_ROOT']));
     $router->route($_SERVER['REQUEST_METHOD'],$_SERVER['REQUEST_URI'],$basePath);
+
+A common idiom for using Routers is to subclass Router and add the routers in
+the constructor. You can also use the setBasePath() protected method to set your
+base path before the routing is performed.
+
+  class AppRouter extends \TCCL\Router\Router {
+    public function __construct() {
+      parent::construct(function() {
+        // Not Found handler
+      });
+
+      // Add routes.
+      $this->addRoute(...);
+
+      // Set base path.
+      $this->setBasePath(...);
+    }
+  }
+
 --------------------------------------------------------------------------------
 Library Overview:
 
@@ -224,6 +244,10 @@ Library Overview:
             with this value; however a derived implementation can override this
             method to handle a return value in some way.
 
+        [protected] setBasePath($basedir)
+
+            Sets the router base path.
+
     [TCCL\Router\RouterExceptionHandling]
 
         Use the RouterExceptionHandling trait to add simple exception handling
@@ -255,7 +279,7 @@ Library Overview:
 
         For example:
 
-            $router->addRoute('GET','/foo','MyHandler::foo');
+            $router->addRoute('GET','/trinket','MyHandler::executeTrinket');
 
     [TCCL\Router\RouterRESTHandling]
 
