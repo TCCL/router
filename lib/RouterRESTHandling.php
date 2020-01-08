@@ -23,17 +23,22 @@ trait RouterRESTHandling {
      * @param array $payload
      *  The contents of the object.
      */
-    public function writeJson(array $payload) {
+    public function writeJson(array $payload,$statusCode = 200) {
+        $this->statusCode = $statusCode;
         $this->contentType = Router::CONTENT_JSON;
         $this->flush();
 
-        echo json_encode($payload) . PHP_EOL;
+        echo json_encode($payload);
     }
 
     /**
      * Writes an empty JSON object to the output stream.
      */
-    public function writeEmptyJsonObject() {
+    public function writeEmptyJsonObject($statusCode = 200) {
+        $this->statusCode = $statusCode;
+        $this->contentType = Router::CONTENT_JSON;
+        $this->flush();
+
         $this->writeJson([]);
     }
 
