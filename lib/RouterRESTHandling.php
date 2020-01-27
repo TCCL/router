@@ -8,6 +8,8 @@
 
 namespace TCCL\Router;
 
+use JsonSerializable;
+
 /**
  * RouterRESTHandling
  *
@@ -20,10 +22,10 @@ trait RouterRESTHandling {
     /**
      * Writes a JSON-encoded object to the output stream.
      *
-     * @param array $payload
-     *  The contents of the object.
+     * @param mixed $payload
+     *  A json-encodable value.
      */
-    public function writeJson(array $payload,$statusCode = 200) {
+    public function writeJson($payload,$statusCode = 200) {
         $this->statusCode = $statusCode;
         $this->contentType = Router::CONTENT_JSON;
         $this->flush();
@@ -57,7 +59,7 @@ trait RouterRESTHandling {
         if (!isset($result)) {
             $this->noContent();
         }
-        else if (is_array($result)) {
+        else if (is_array($result) || $result instanceof JsonSerializable) {
             $this->writeJson($result);
         }
     }
