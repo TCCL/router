@@ -1,4 +1,4 @@
-router - v4.4.0
+router - v4.4.1
 --------------------------------------------------------------------------------
 This repository provides a class library for routing requests to a PHP
 application. The library is designed to be small and minimal.
