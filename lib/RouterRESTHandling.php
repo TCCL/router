@@ -41,7 +41,7 @@ trait RouterRESTHandling {
         $this->contentType = Router::CONTENT_JSON;
         $this->flush();
 
-        $this->writeJson([]);
+        echo '{}';
     }
 
     /**
