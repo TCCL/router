@@ -129,7 +129,7 @@ class PayloadVerify {
     }
 
     private static function parseKey($key) {
-        $regex = '/^(.+)(\??)$/';
+        $regex = '/^([a-zA-Z_][A-Za-z_0-9]*)(\??)$/';
 
         if (preg_match($regex,$key,$match)) {
             return [
