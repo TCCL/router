@@ -1,4 +1,4 @@
-router - v4.4.1
+router - v4.5.0
 --------------------------------------------------------------------------------
 This repository provides a class library for routing requests to a PHP
 application. The library is designed to be small and minimal.
@@ -16,6 +16,8 @@ composer.json file and then install.
 You must target at least v3.0.0 to use the composer package.
 
 --------------------------------------------------------------------------------
+Interface:
+
 Classes
 
     TCCL\Router\Router
@@ -231,6 +233,14 @@ Library Overview:
             Gets the named request parameter, returning $default if it is not
             found.
 
+        getRequestParamVerify($name,$format,$default = null)
+
+            Gets the named request parameter with applied verification.
+
+        getPayloadVerify($format)
+
+            Gets the full request payload with applied verification.
+
         [protected] createHandler($handler)
 
             May be overridden by custom routers to provide new route handler
@@ -292,3 +302,83 @@ Library Overview:
 
         The trait also provides basic functionality for writing JSON objects and
         other common REST API responses.
+
+--------------------------------------------------------------------------------
+Payload Verification:
+
+The library provides a simple mechanism for verifying a request payload. While
+the functionality is designed to be used indirectly through the
+TCCL\Router\Router class, the raw implementation can be accessed via the
+TCCL\Router\PayloadVerify class.
+
+Payload verification is denoted via a format parameter. A format parameter is a
+string or array that denotes the structure of the request payload (or a part of
+it when verifying only a single parameter). If the format is an array, it may be
+either a dictionary or a sequence. Additionally, arrays can denote nested format
+parameter structures.
+
+When a payload fails verification, a RouterException is thrown with error code
+HTTP 400.
+
+The simplest format parameter is a scalar format parameter. For example, the
+following format parameter matches an integer:
+
+    'i'
+
+A scalar format parameter is a string resulting from the concatenation of two
+string components. The first component of the format string denotes the set of
+types that are accepted by the format. Types are denoted using a lowercase
+character, and one or more characters may be provided. The second component of
+the format string denotes the promotion (if any). Promotions are denoted using
+an uppercase letter. When a promotion is specified, the payload is modified to
+contain the promoted value; the promotion component can be omitted to leave the
+value untouched.
+
+    Structure: '<types>[PROMOTION]'
+    Example: 'isS' (accept a string or integer and promote to string)
+
+The following types and promotions are supported by default:
+
+    TYPES               PROMOTIONS
+    's' - String        'S' - Promote to string
+    'i' - Integer       'I' - Promote to integer
+    'f' - Float         'F' - Promote to float
+    'd' - Double        'D' - Promote to double
+
+You may define custom types/promotions using the PayloadVerify::registerType()
+and PayloadVerify::registerPromotion() methods. This allows you to perform more
+advanced payload validation.
+
+If the format parameter is an array, then an array structure is verified for the
+payload. There are two cases to consider. If the format parameter is a PHP
+indexed array, then it denotes a sequence of values that are all parsed using
+the same nested format parameter. Otherwise it is a PHP associative array that
+denotes a dictionary sturcture. Note that the content type of the request
+payload may limit the range of viable representations. For example, JSON allows
+a top-level array representation, whereas URL-encoded data cannot denote a
+top-level array.
+
+When an indexed array is provided, only the first element is considered. This
+first element is a nested format parameter denoting how each element in the
+payload sequence should be verified.
+
+    Example: ['s'] (accept a list of strings)
+    Example: [['first' => 's','last' => 's']] (accept a list of dictionaries)
+
+When an associative array is provided, it is interpreted as a dictionary
+structure to verify. Keys may be optional if suffixed with a '?'.
+
+    Example: Parse patron registration record object from request payload
+
+    [
+        'name' => [
+            'first' => 's',
+            'middle?' => 's',
+            'last' => 's',
+        ],
+        'addressLines' => ['s'],
+        'phone' => 's',
+        'dob' => 't',
+    ]
+
+    Where 't' is a custom 

@@ -329,18 +329,20 @@ class Router {
      *
      * @param string $name
      *  The request parameter name.
-     * @param array $format
-     *  The verification format array.
+     * @param mixed $format
+     *  The verification format parameter.
      * @param mixed $default
      *  A value to return if the request parameter is not found.
+     * @param array $options
+     *  Additional options to pass to the verify functionality.
      *
      * @throws TCCL\Router\RouterException
      *  Throws a generic HTTP-400 RouterException upon verification failure.
      */
-    public function getRequestParamVerify($name,$format,$default = null) {
+    public function getRequestParamVerify($name,$format,$default = null,$options = []) {
         if (isset($this->params[$name])) {
             $value = $this->params[$name];
-            PayloadVerify::verify($value,$format);
+            PayloadVerify::verify($value,$format,$options);
             return $value;
         }
 
@@ -348,12 +350,19 @@ class Router {
     }
 
     /**
+     * Gets the request payload after verifying its contents.
+     *
+     * @param mixed $format
+     *  The verification format parameter.
+     * @param array $options
+     *  Additional options to pass to the verify functionality.
+     *
      * @throws TCCL\Router\RouterException
      *  Throws a generic HTTP-400 RouterException upon verification failure.
      */
-    public function getPayloadVerify($format) {
+    public function getPayloadVerify($format,$options = []) {
         $copy = $this->params;
-        PayloadVerify::verify($copy,$format);
+        PayloadVerify::verify($copy,$format,$options);
         return $copy;
     }
 
