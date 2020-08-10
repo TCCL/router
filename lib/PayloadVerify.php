@@ -32,6 +32,34 @@ class PayloadVerify {
     ];
 
     /**
+     * Registers a custom type. Note: this can override core types.
+     *
+     * @param string $typechar
+     *  The character that identifies the type in a scalar format. This is a
+     *  lowercase character.
+     * @param callable $typeFn
+     *  The predicate function called to verify the scalar.
+     */
+    public static function registerType($typechar,callable $typeFn) {
+        self::$typeFns[strtolower($typechar[0])] = $typeFn;
+    }
+
+    /**
+     * Registers a custom type promotion. Note: this can override core
+     * promotions.
+     *
+     * @param string $promotechar
+     *  The character that identifies the promotion in a scalar format. This is
+     *  an uppercase character.
+     * @param callable $promoteFn
+     *  The function called to perform the type promotion. Such a function takes
+     *  a single scalar argument and returns the promoted value.
+     */
+    public static function registerPromotion($promotechar,callable $promoteFn) {
+        self::$promoteFns[strtoupper($promotechar[0])] = $promoteFn;
+    }
+
+    /**
      * Verifies a payload structure.
      *
      * @param mixed $vars
@@ -142,7 +170,9 @@ class PayloadVerify {
     }
 
     private static function parseTypeFormat($format) {
-        $regex = '/^([sifd]+)([SIFD])?$/';
+        $types = implode('',array_keys(self::$typeFns));
+        $promotions = implode('',array_keys(self::$promoteFns));
+        $regex = "/^([$types]+)([$promotions])?$/";
 
         if (preg_match($regex,$format,$match)) {
             $results = [];
