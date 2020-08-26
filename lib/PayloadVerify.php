@@ -18,6 +18,7 @@ class PayloadVerify {
     ];
 
     private static $typeFns = [
+        'b' => 'is_bool',
         's' => 'is_string',
         'i' => 'is_int',
         'f' => 'is_float',
@@ -25,6 +26,7 @@ class PayloadVerify {
     ];
 
     private static $promoteFns = [
+        'B' => 'boolval',
         'S' => 'strval',
         'I' => 'intval',
         'F' => 'floatval',
