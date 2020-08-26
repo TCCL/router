@@ -84,7 +84,8 @@ class PayloadVerify {
     }
 
     private static function verifyScalar(&$vars,$format) {
-        if (!is_scalar($vars)) {
+        // NOTE: We treat NULL like a scalar value.
+        if (!is_scalar($vars) && !is_null($vars)) {
             throw new RouterException(400);
         }
 
@@ -98,7 +99,12 @@ class PayloadVerify {
         foreach ($typeInfo['verify'] as $fn) {
             if ($fn($vars)) {
                 $good = true;
+                break;
             }
+        }
+
+        if (!$good && is_null($vars) && $typeInfo['allowNull']) {
+            $good = true;
         }
 
         if (isset($typeInfo['promote'])) {
@@ -138,7 +144,7 @@ class PayloadVerify {
             $nkeys = count($format);
             foreach ($format as $key => $newFormat) {
                 $result = self::parseKey($key);
-                if (isset($vars[$result['name']])) {
+                if (array_key_exists($result['name'],$vars)) {
                     self::verifyDecide($vars[$result['name']],$newFormat);
                 }
                 else if (!$result['optional']) {
@@ -159,7 +165,7 @@ class PayloadVerify {
     }
 
     private static function parseKey($key) {
-        $regex = '/^([a-zA-Z_][A-Za-z_0-9]*)(\??)$/';
+        $regex = '/^([a-zA-Z_][A-Za-z_0-9]*)([?]?)$/';
 
         if (preg_match($regex,$key,$match)) {
             return [
@@ -174,10 +180,13 @@ class PayloadVerify {
     private static function parseTypeFormat($format) {
         $types = implode('',array_keys(self::$typeFns));
         $promotions = implode('',array_keys(self::$promoteFns));
-        $regex = "/^([$types]+)([$promotions])?$/";
+        $regex = "/^([$types]+)([$promotions]?)([?]?)$/";
 
         if (preg_match($regex,$format,$match)) {
             $results = [];
+
+            $results['allowNull'] = ( $match[3] == '?' );
+
             foreach (array_unique(str_split($match[1])) as $char) {
                 if (!isset(self::$typeFns[$char])) {
                     throw new Exception("Invalid type specifier '$char'");
