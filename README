@@ -1,4 +1,4 @@
-router - v4.5.0
+router - v4.6.0
 --------------------------------------------------------------------------------
 This repository provides a class library for routing requests to a PHP
 application. The library is designed to be small and minimal.
@@ -344,10 +344,15 @@ The following types and promotions are supported by default:
     'i' - Integer       'I' - Promote to integer
     'f' - Float         'F' - Promote to float
     'd' - Double        'D' - Promote to double
+    'b' - Boolean       'B' - Promote to boolean
 
 You may define custom types/promotions using the PayloadVerify::registerType()
 and PayloadVerify::registerPromotion() methods. This allows you to perform more
 advanced payload validation.
+
+A scalar format parameter may be suffixed with '?' to allow null. Example:
+
+  'siS?' - Accepts a string or integer, promotes to string, accepts null
 
 If the format parameter is an array, then an array structure is verified for the
 payload. There are two cases to consider. If the format parameter is a PHP
