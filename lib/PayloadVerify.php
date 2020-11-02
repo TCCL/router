@@ -123,7 +123,7 @@ class PayloadVerify {
 
         // If the format is an indexed array, then check each element.
         if (array_keys($format) === range(0,count($format)-1)) {
-            if (array_keys($vars) !== range(0,count($vars)-1)) {
+            if (!empty($vars) && array_keys($vars) !== range(0,count($vars)-1)) {
                 throw new RouterException(400);
             }
 
