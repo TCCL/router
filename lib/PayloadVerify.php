@@ -39,6 +39,7 @@ class PayloadVerify {
         '+' => '\TCCL\Router\PayloadVerify::is_positive',
         '-' => '\TCCL\Router\PayloadVerify::is_negative',
         '*' => '\TCCL\Router\PayloadVerify::is_nonnegative',
+        '%' => '\TCCL\Router\PayloadVerify::is_nonzero',
     ];
 
     /**
@@ -256,5 +257,9 @@ class PayloadVerify {
 
     private static function is_nonnegative($val) {
         return $val >= 0;
+    }
+
+    private static function is_nonzero($val) {
+        return $val != 0;
     }
 }
