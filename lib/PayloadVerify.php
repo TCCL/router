@@ -31,6 +31,14 @@ class PayloadVerify {
         'I' => 'intval',
         'F' => 'floatval',
         'D' => 'doubleval',
+        '^' => 'trim',
+    ];
+
+    private static $checkFns = [
+        '!' => 'strlen',
+        '+' => '\TCCL\Router\PayloadVerify::is_positive',
+        '-' => '\TCCL\Router\PayloadVerify::is_negative',
+        '*' => '\TCCL\Router\PayloadVerify::is_nonnegative',
     ];
 
     /**
@@ -114,6 +122,14 @@ class PayloadVerify {
         if (isset($typeInfo['promote'])) {
             $vars = $typeInfo['promote']($vars);
         }
+
+        if (isset($typeInfo['check'])) {
+            foreach ($typeInfo['check'] as $fn) {
+                if (!$fn($vars)) {
+                    throw new PayloadVerifyException($vars,$format);
+                }
+            }
+        }
     }
 
     private static function verifyArray(&$vars,$format) {
@@ -184,12 +200,12 @@ class PayloadVerify {
     private static function parseTypeFormat($format) {
         $types = implode('',array_keys(self::$typeFns));
         $promotions = implode('',array_keys(self::$promoteFns));
-        $regex = "/^([$types]+)([$promotions]?)([?]?)$/";
+        $types = preg_quote($types);
+        $promotions = preg_quote($promotions);
+        $regex = "/^([$types]+)([$promotions]?)(?:\[(.*)\])?([?]?)$/";
 
         if (preg_match($regex,$format,$match)) {
             $results = [];
-
-            $results['allowNull'] = ( $match[3] == '?' );
 
             foreach (array_unique(str_split($match[1])) as $char) {
                 if (!isset(self::$typeFns[$char])) {
@@ -209,9 +225,36 @@ class PayloadVerify {
                 $results['promote'] = null;
             }
 
+            if (!empty($match[3])) {
+                foreach (array_unique(str_split($match[3])) as $char) {
+                    if (!isset(self::$checkFns[$char])) {
+                        throw new Exception("Invalid check specifier '$char'");
+                    }
+
+                    $results['check'][] = self::$checkFns[$char];
+                }
+            }
+            else {
+                $results['check'] = [];
+            }
+
+            $results['allowNull'] = ( $match[4] == '?' );
+
             return $results;
         }
 
         throw new Exception('Invalid scalar format');
+    }
+
+    private static function is_positive($val) {
+        return $val > 0;
+    }
+
+    private static function is_negative($val) {
+        return $val < 0;
+    }
+
+    private static function is_nonnegative($val) {
+        return $val >= 0;
     }
 }
