@@ -144,7 +144,10 @@ class PayloadVerify {
             $nkeys = count($format);
             foreach ($format as $key => $newFormat) {
                 $result = self::parseKey($key);
-                if (array_key_exists($result['name'],$vars)) {
+                if (array_key_exists($result['name'],$vars)
+                    && (!is_null($vars[$result['name']])
+                        || !$result['optional']))
+                {
                     self::verifyDecide($vars[$result['name']],$newFormat);
                 }
                 else if (!$result['optional']) {
@@ -152,6 +155,7 @@ class PayloadVerify {
                 }
                 else {
                     // Don't count optional keys.
+                    unset($vars[$result['name']]);
                     $nkeys -= 1;
                 }
             }
