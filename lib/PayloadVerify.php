@@ -86,7 +86,7 @@ class PayloadVerify {
     private static function verifyScalar(&$vars,$format) {
         // NOTE: We treat NULL like a scalar value.
         if (!is_scalar($vars) && !is_null($vars)) {
-            throw new RouterException(400);
+            throw new PayloadVerifyException($vars,$format);
         }
 
         if (!is_string($format)) {
@@ -112,19 +112,19 @@ class PayloadVerify {
         }
 
         if (!$good) {
-            throw new RouterException(400);
+            throw new PayloadVerifyException($vars,$format);
         }
     }
 
     private static function verifyArray(&$vars,$format) {
         if (!is_array($vars)) {
-            throw new RouterException(400);
+            throw new PayloadVerifyException($vars,$format);
         }
 
         // If the format is an indexed array, then check each element.
         if (array_keys($format) === range(0,count($format)-1)) {
             if (!empty($vars) && array_keys($vars) !== range(0,count($vars)-1)) {
-                throw new RouterException(400);
+                throw new PayloadVerifyException($vars,$format);
             }
 
             $subformat = $format[0];
@@ -138,7 +138,7 @@ class PayloadVerify {
             // payload structure.
 
             if (!empty($vars) && array_keys($vars) === range(0,count($vars)-1)) {
-                throw new RouterException(400);
+                throw new PayloadVerifyException($vars,$format);
             }
 
             $nkeys = count($format);
@@ -148,7 +148,7 @@ class PayloadVerify {
                     self::verifyDecide($vars[$result['name']],$newFormat);
                 }
                 else if (!$result['optional']) {
-                    throw new RouterException(400);
+                    throw new PayloadVerifyException($vars,$format);
                 }
                 else {
                     // Don't count optional keys.
@@ -159,7 +159,7 @@ class PayloadVerify {
             // If we check extraneous, then we make sure the structure matches
             // exactly such that there are no extraneous keys.
             if (self::$currentOptions['checkExtraneous'] && $nkeys != count($vars)) {
-                throw new RouterException(400);
+                throw new PayloadVerifyException($vars,$format);
             }
         }
     }
