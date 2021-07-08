@@ -107,12 +107,12 @@ class PayloadVerify {
             $good = true;
         }
 
-        if (isset($typeInfo['promote'])) {
-            $vars = $typeInfo['promote']($vars);
-        }
-
         if (!$good) {
             throw new PayloadVerifyException($vars,$format);
+        }
+
+        if (isset($typeInfo['promote'])) {
+            $vars = $typeInfo['promote']($vars);
         }
     }
 
