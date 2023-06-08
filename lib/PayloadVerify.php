@@ -85,7 +85,14 @@ class PayloadVerify {
      *  The predicate function called to verify the scalar.
      */
     public static function registerType($typechar,callable $typeFn) {
-        self::$typeFns[strtolower($typechar[0])] = $typeFn;
+        $chr = strtolower($typechar[0]);
+        if ($chr < 'a' || $chr > 'z') {
+            throw new \Exception(
+                "Cannot register type: specifier character '$chr' is invalid"
+            );
+        }
+
+        self::$typeFns[$chr] = $typeFn;
     }
 
     /**
@@ -100,7 +107,40 @@ class PayloadVerify {
      *  a single scalar argument and returns the promoted value.
      */
     public static function registerPromotion($promotechar,callable $promoteFn) {
-        self::$promoteFns[strtoupper($promotechar[0])] = $promoteFn;
+        $chr = strtoupper($promotechar[0]);
+        if (isset(self::$checkFns[$chr])) {
+            throw new \Exception(
+                "Cannot register promotion: character '$chr' is "
+               ."already used for check function"
+            );
+        }
+
+        self::$promoteFns[$chr] = $promoteFn;
+    }
+
+    /**
+     * Registers a custom check. Note: this can override core checks.
+     *
+     * @param string $checkchar
+     *  The character that identifies the check.
+     * @param callable $checkFn
+     *  The predicate function called to perform the check.
+     */
+    public static function registerCheck($checkchar,callable $checkFn) {
+        $chr = strtolower($checkchar[0]);
+        if ($chr >= 'a' && $chr <= 'z') {
+            throw new \Exception(
+                "Cannot register check: specifier character '$chr' is invalid"
+            );
+        }
+        if (isset($promoteFns[$chr])) {
+            throw new \Exception(
+                "Cannot register check: character '$chr' is "
+               ."already used for promotion function"
+            );
+        }
+
+        self::$checkFns[$chr] = $checkFn;
     }
 
     /**
