@@ -1,3 +1,6 @@
-test.php
+#
+# .gitignore - tccl/router
+#
+
 vendor/
 composer.lock
