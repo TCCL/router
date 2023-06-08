@@ -6,7 +6,7 @@
  * This library provides an extremely simple request router. It is designed to
  * be functional and mostly minimal.
  *
- * @package tccl/router
+ * @package tccl\router
  */
 
 namespace TCCL\Router;

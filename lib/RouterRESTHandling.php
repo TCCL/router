@@ -3,7 +3,7 @@
 /**
  * RouterRESTHandling.php
  *
- * tccl/router
+ * @package tccl\router
  */
 
 namespace TCCL\Router;

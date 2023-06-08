@@ -3,7 +3,7 @@
 /**
  * RouterException.php
  *
- * @package tccl/router
+ * @package tccl\router
  */
 
 namespace TCCL\Router;
