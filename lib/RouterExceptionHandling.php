@@ -11,10 +11,9 @@ namespace TCCL\Router;
 use Exception;
 
 /**
- * RouterExceptionHandling
+ * Encapsulates router exception handling functionality.
  *
- * Encapsulates router exception handling functionality. This trait is designed
- * to be used in a class derived from TCCL\Router\Router.
+ * This trait is designed to be used in a class derived from TCCL\Router\Router.
  */
 trait RouterExceptionHandling {
     /**

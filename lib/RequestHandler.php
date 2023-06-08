@@ -9,10 +9,10 @@
 namespace TCCL\Router;
 
 /**
- * RequestHandler
+ * Interface for request handler implementations.
  *
- * This interface represents a handler object. Class-based request handlers must
- * implement this interface.
+ * This interface represents a handler object. The default, class-based router
+ * handling expects instances of this interface.
  */
 interface RequestHandler {
     /**

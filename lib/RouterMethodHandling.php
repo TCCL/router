@@ -9,10 +9,11 @@
 namespace TCCL\Router;
 
 /**
- * RouterMethodHandling
- *
  * Provides routing to a particular method within a request handler
- * implementation. Route request handler descriptions can now have the form:
+ * implementation.
+ *
+ * When using this trait, route request handler descriptions can now have the
+ * form:
  *
  *   ClassName::MethodName
  *

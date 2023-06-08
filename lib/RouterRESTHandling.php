@@ -8,15 +8,12 @@
 
 namespace TCCL\Router;
 
-use JsonSerializable;
-
 /**
- * RouterRESTHandling
- *
  * Provides functionality for building REST API routers that use JSON for state
- * representation. A router that uses this trait will handle handler return
- * values as JSON payloads and will automatically write them to the output
- * stream.
+ * representation.
+ *
+ * A router that uses this trait will handle handler return values as JSON
+ * payloads and will automatically write them to the output stream.
  */
 trait RouterRESTHandling {
     /**
@@ -59,7 +56,7 @@ trait RouterRESTHandling {
         if (!isset($result)) {
             $this->noContent();
         }
-        else if (is_array($result) || $result instanceof JsonSerializable) {
+        else if (is_array($result) || $result instanceof \JsonSerializable) {
             $this->writeJson($result);
         }
     }

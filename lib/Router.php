@@ -3,21 +3,13 @@
 /**
  * Router.php
  *
- * This library provides an extremely simple request router. It is designed to
- * be functional and mostly minimal.
- *
  * @package tccl\router
  */
 
 namespace TCCL\Router;
 
-use Exception;
-
 /**
- * Router
- *
- * This class provides a Router object that is used to define request routes
- * for an application-backend.
+ * Provides web application request routing functionality.
  */
 class Router {
     /**
@@ -165,7 +157,7 @@ class Router {
         if (is_array($method)) {
             foreach ($method as $m) {
                 if (!isset($this->routeTable[$m])) {
-                    throw new Exception(__METHOD__.": bad request method '$m'");
+                    throw new \Exception("Bad request method '$m'");
                 }
                 $this->routeTable[$m][$uri] = $handler;
             }
@@ -203,16 +195,16 @@ class Router {
      *  The HTTP request method
      * @param string $uri
      *  The request URI.
-     * @param string $basedir
-     *  The base directory of the requests. URIs are transformed to be relative
-     *  to this directory so that routes can happen under subdirectories. This
+     * @param string $basePath
+     *  The base path of the requests. URIs are transformed to be relative to
+     *  this directory so that routes can happen under subdirectories. This
      *  should be an absolute path (under the Web root).
      */
-    public function route($method,$uri,$basedir = null) {
+    public function route($method,$uri,$basePath = null) {
         // Apply the base path if set or if an existing base path was not in
         // place.
-        if (isset($basedir) || !isset($this->basePath)) {
-            $this->setBasePath($basedir);
+        if (isset($basePath) || !isset($this->basePath)) {
+            $this->setBasePath($basePath);
         }
 
         $this->uri = self::get_relative_path($this->basePath,parse_url($uri,PHP_URL_PATH));
@@ -408,7 +400,7 @@ class Router {
             // that will serve as the new base path.
 
             if (!isset($this->matches[0])) {
-                throw new Exception(__METHOD__.': expected regex match for subrouter');
+                throw new \Exception('Expected regex match for subrouter');
             }
 
             $handler->copyFrom($this);
@@ -418,8 +410,9 @@ class Router {
 
         // Make sure object's class implements RequestHandler.
         if (!is_a($handler,'\TCCL\Router\RequestHandler')) {
-            throw new Exception(__METHOD__.': request handler object must '
-                                . 'implement RequestHandler interface');
+            throw new \Exception(
+                'Request handler object must implement RequestHandler interface'
+            );
         }
 
         $handler = array($handler,'run');
@@ -442,15 +435,15 @@ class Router {
      * Sets the implicit base path used to prefix any URI generated with the
      * Router instance (such as via getURI()).
      *
-     * @param string $basedir
-     *  The basedir to set.
+     * @param string $basePath
+     *  The base path to set.
      */
-    final protected function setBasePath($basedir) {
+    final protected function setBasePath($basePath) {
         // Replace all backslashes with forward slashes. This allows the
         // implementation to work on MS Windows.
-        $basedir = str_replace('\\','/',$basedir);
+        $basePath = str_replace('\\','/',$basePath);
 
-        $this->basePath = rtrim($basedir,'/');
+        $this->basePath = rtrim($basePath,'/');
     }
 
     private function parseInputParameters() {
@@ -551,10 +544,10 @@ class Router {
         $this->resultHandler($handler($this));
     }
 
-    private static function get_relative_path($basedir,$uri) {
-        // Find path component relative to the specified base directory.
-        if (!empty($basedir) && strpos($uri,$basedir) === 0) {
-            $uri = substr($uri,strlen($basedir));
+    private static function get_relative_path($basePath,$uri) {
+        // Find path component relative to the specified base path.
+        if (!empty($basePath) && strpos($uri,$basePath) === 0) {
+            $uri = substr($uri,strlen($basePath));
             if (empty($uri)) {
                 $uri = '/';
             }

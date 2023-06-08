@@ -8,8 +8,41 @@
 
 namespace TCCL\Router;
 
-use Exception;
-
+/**
+ * Provides functionality for verifying a request payload.
+ *
+ * You may use this class directly; however, the functionality is primarily
+ * exposed through TCCL\Router\Router::getPayloadVerify().
+ *
+ * Payload verification looks through a request parameter payload and determines
+ * if the required parameters exist and are properly constrained. Constraints
+ * include data type, range, ETC. A format argument is used to indicate the
+ * parameters and constraints.
+ *
+ * The payload verification processes produces a result payload that contains
+ * the verified parameters. The format argument may indicate promotions for each
+ * payload parameter that convert the value to the expected data type.
+ *
+ * Example format array:
+ *  [
+ *    "name" => "s",
+ *    "favorite_number" => "siI",
+ *    "age?" => "i",
+ *  ]
+ *
+ * Example payload that passes:
+ *  [
+ *    "name" => "Roger",
+ *    "favorite_number" => "33",
+ *  ]
+ *
+ * Example payload that fails:
+ *  [
+ *    "name" => "Roger",
+ *    "favorite_number" => "33",
+ *    "age" => "29", // fail: age, if specified, must be integer
+ *  ]
+ */
 class PayloadVerify {
     private static $currentOptions;
 
@@ -99,7 +132,7 @@ class PayloadVerify {
         }
 
         if (!is_string($format)) {
-            throw new Exception('Invalid scalar format');
+            throw new \Exception('Invalid scalar format');
         }
 
         $typeInfo = self::parseTypeFormat($format);
@@ -195,7 +228,7 @@ class PayloadVerify {
             ];
         }
 
-        throw new Exception('Invalid payload key in format');
+        throw new \Exception('Invalid payload key in format');
     }
 
     private static function parseTypeFormat($format) {
@@ -210,7 +243,7 @@ class PayloadVerify {
 
             foreach (array_unique(str_split($match[1])) as $char) {
                 if (!isset(self::$typeFns[$char])) {
-                    throw new Exception("Invalid type specifier '$char'");
+                    throw new \Exception("Invalid type specifier '$char'");
                 }
 
                 $results['verify'][] = self::$typeFns[$char];
@@ -218,7 +251,7 @@ class PayloadVerify {
 
             if (!empty($match[2])) {
                 if (!isset(self::$promoteFns[$match[2]])) {
-                    throw new Exception("Invalid type promotion '{$match[2]}'");
+                    throw new \Exception("Invalid type promotion '{$match[2]}'");
                 }
                 $results['promote'] = self::$promoteFns[$match[2]];
             }
@@ -229,7 +262,7 @@ class PayloadVerify {
             if (!empty($match[3])) {
                 foreach (array_unique(str_split($match[3])) as $char) {
                     if (!isset(self::$checkFns[$char])) {
-                        throw new Exception("Invalid check specifier '$char'");
+                        throw new \Exception("Invalid check specifier '$char'");
                     }
 
                     $results['check'][] = self::$checkFns[$char];
@@ -244,7 +277,7 @@ class PayloadVerify {
             return $results;
         }
 
-        throw new Exception('Invalid scalar format');
+        throw new \Exception('Invalid scalar format');
     }
 
     private static function is_positive($val) {

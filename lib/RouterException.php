@@ -11,8 +11,6 @@ namespace TCCL\Router;
 use Exception;
 
 /**
- * RouterException
- *
  * Represents an exception thrown from a route's request handler.
  */
 class RouterException extends Exception {
