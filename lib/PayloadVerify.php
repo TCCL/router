@@ -275,9 +275,11 @@ class PayloadVerify {
     private static function parseTypeFormat(string $format) : array {
         $types = implode('',array_keys(self::$typeFns));
         $promotions = implode('',array_keys(self::$promoteFns));
+        $checks = implode('',array_keys(self::$checkFns));
         $types = preg_quote($types);
         $promotions = preg_quote($promotions);
-        $regex = "/^([$types]+)([$promotions]?)(?:\[(.*)\])?([?]?)$/";
+        $checks = preg_quote($checks);
+        $regex = "/^([$types]+)([$promotions]*)([$checks]*)([?]?)$/";
 
         if (preg_match($regex,$format,$match)) {
             $results = [];
