@@ -16,15 +16,15 @@ composer require tccl/router
 
 | Name | Description |
 | -- | -- |
-| `TCCL\Router\Router` | The core routing object type |
-| `TCCL\Router\RequestHandler` | An abstract interface for class-based request handlers |
-| `TCCL\Router\RouterException` | Exception type for handling request handler errors |
+| `TCCL\Router\Router` | Provides core routing functionality |
+| `TCCL\Router\RequestHandler` | Provides interface for class-based request handlers |
+| `TCCL\Router\RouterException` | Provides type for handling request handler exceptions |
 
 ### Traits
 
 | Name | Description |
 | -- | -- |
-| `TCCL\Router\RouterExceptionHandling` | Optional trait to add to router subclass for exception handling |
+| `TCCL\Router\RouterExceptionHandling` | Optional trait to add exception handling to a router subclass |
 | `TCCL\Router\RouterMethodHandling` | Optional trait to add method handling support to a router subclass |
 | `TCCL\Router\RouterRESTHandling` | Optional trait to add REST API support to a router subclass |
 
@@ -32,7 +32,7 @@ composer require tccl/router
 
 ### Creating a router
 
-Router provides a mechanism for routing control to a handler based on an input URI. It is very easy to setup and use. Just create an instance of type `TCCL\Router\Router`. The constructor takes a handler argument which is the default handler used when a route does not match:
+Router provides a mechanism for routing control to a handler based on an input URI. It is very easy to set up and use. Just create an instance of type `TCCL\Router\Router`. The constructor takes a handler argument which is the default handler used when a route does not match:
 
 ~~~php
 use TCCL\Router\Router;
@@ -104,7 +104,7 @@ The simplest handler specifier is a callable. This can be a function or class me
 
 #### Handler specifier: class name or instance of `TCCL\Router\RequestHandler`
 
-Typically, you will use a handler that implements the `TCCL\Router\RequestHandler` interface, as it provides more robust functionality. If you specify a class name, the router will create a new instance of the class if and when the route is executed. Otherwise, if you provide an instance, then the instance will be used as-is when the route is executed.
+Typically, you will use a handler that implements the `TCCL\Router\RequestHandler` interface, as it provides more robust functionality. If you specify a class name, the router will create a new instance of the class if and when the route is executed. Otherwise, if you provide an instance, that instance will be used as-is when the route is executed.
 
 When a route executes with a `RequestHandler`, it will invoke the `run()` method, passing the executing `Router` as the parameter.
 
@@ -138,7 +138,7 @@ $router->addRoute(Router::HTTP_ALL,'/^\/api\//','APIRouter');
 
 ### Executing the router
 
-To actually route a request, you must execute the router using its `route` method. You must specify the HTTP method and URI to route. These values can be obtained from `_$SERVER` depending on your PHP SAPI.
+To actually route a request, you must execute the router using its `route` method. You must specify the HTTP method and URI to route. These values may be obtained from `_$SERVER` depending on your PHP SAPI.
 
 ~~~php
 $router->route($_SERVER['REQUEST_METHOD'],$_SERVER['REQUEST_URI']);
@@ -146,11 +146,11 @@ $router->route($_SERVER['REQUEST_METHOD'],$_SERVER['REQUEST_URI']);
 
 #### Base path
 
-The `route` method also takes a final parameter indicating the base path for all requests. This is useful for when an application is running under a sub-directory of the document root. The router will automatically fixup the request URI when matching against the routing table.
+The `route` method also takes a final parameter indicating the base path for all requests. This is useful for when an application is running under a sub-directory of the document root. The router will automatically convert the request URI relative to the configured base path when matching against the routing table.
 
-> You can also set the base path using the projected method `setBasePath` if you are subclassing `TCCL\Router\Router`.
+> You can also set the base path using the protected method `setBasePath` if you are subclassing `TCCL\Router\Router`.
 
-Pro Tip: To allow your application to work arbitrarily under any sub-directory of the document root, calculate the base path using the file name of entry point script and the `DOCUMENT_ROOT` server variable.
+Pro Tip: To allow your application to work arbitrarily under any sub-directory of the document root, calculate the base path using the path of the directory containing the entry point script and the value of the `DOCUMENT_ROOT` server variable.
 
 ~~~php
 // Given __FILE__:"/path/to/www/app/index.php"
@@ -159,10 +159,13 @@ $entryPointPath = dirname(__FILE__);
 $documentRoot = $_SERVER['DOCUMENT_ROOT'];
 $basePath = substr($entryPointPath,strlen($documentRoot));
 
-// Given documentRoot:"/path/to/www" and entryPointPath:"/path/to/www/app",
+// Given entryPointPath:"/path/to/www/app" and documentRoot:"/path/to/www",
 // then we get basePath:"/app"
 
-$router->route($_SERVER['REQUEST_METHOD'],$_SERVER['REQUEST_URI'],$basePath);
+$router->route(
+    $_SERVER['REQUEST_METHOD'],
+    $_SERVER['REQUEST_URI'],$basePath
+);
 ~~~
 
 This trick works if you have an entry point script (e.g. `index.php`) that is called for each route; the entry point script must be installed at the root of the project tree.
@@ -210,7 +213,7 @@ You must also implement the `handleServerError` and `handleRouterError` methods 
 
 Router method handling allows you to define a single handler class with multiple methods that handle each request. To add method handling to a `Router` subclass, use trait `TCCL\Router\RouterMethodHandling`.
 
-Once method handling has been added, you can add a method name to a class name handler specifier (e.g. `Namespace\Class::methodName`).
+Once method handling has been added, you can add a method name to a class name handler specifier (e.g. `Namespace\Class::methodName`). You do not need to implement `RequestHandler` in the handler class when using method handling. Handler methods must be non-static and receive a single `Router` argument.
 
 ~~~php
 use TCCL\Router\Router;
@@ -241,7 +244,9 @@ class Handler {
 
 #### REST handling
 
-REST handling allows you to add special functionality to a custom `Router` subclass that makes writing REST API endpoints using JSON more convenient. The handling allows your request handler to return a payload that is then automatically converted into JSON. The correct HTTP headers are also applied.
+REST handling adds additional functionality to a custom `Router` subclass that makes writing REST API endpoints using JSON more convenient. The handling allows your request handler to return a payload that is then automatically converted into JSON. The correct HTTP headers are also applied.
+
+If the handler returns `null`, then HTTP `204` No Content is returned. The handler may return `false` to prevent any handling of the return value; this is useful for when the handler needs to perform its own response generation.
 
 To add REST handling to a `Router` subclass, use trait `TCCL\Router\RouterRESTHandling`.
 
@@ -289,9 +294,9 @@ class Handler {
 
 ### Request Payload Verification
 
-The library provides a mechanism for verifying a request payload that can avoid tedious boilerplate in the implementation of a request handler. Verification also helps sanitize user input.
+The library provides a mechanism for verifying a request payload that can avoid tedious boilerplate in the implementation of a request handler. Verification also helps to sanitize user input.
 
-Payload verification functionality is defined in the `TCCL\Router\PayloadVerify` class, but is primarily accessed via `TCCL\Router\Router::getPayloadVerify`.
+Payload verification functionality is defined in the `TCCL\Router\PayloadVerify` class, but is primarily accessed via the `TCCL\Router\Router::getPayloadVerify()` method.
 
 #### Background
 
@@ -309,7 +314,7 @@ The payload is generated from the request parameters. This works for any type of
 
 > Note: For HTTP `GET` requests, the data type for each parsed parameter will be `string`. You can apply promotions via payload verification, but you will want to make sure you are only type validating for `string`. For other request methods (e.g. `POST`), the content type of the request payload can allow for other data types to be encoded.
 
-If verification fails, then a `TCCL\Router\PayloadVerifyException`. The `PayloadVerifyException` class is a sub-type of a `TCCL\Router\RouterException` having status code `400`. You can catch these exceptions and call `printDebug()` to obtain diagnostic information about how the payload failed to verify.
+If verification fails, then a `TCCL\Router\PayloadVerifyException` is thrown. The `PayloadVerifyException` class is a sub-type of a `TCCL\Router\RouterException` having status code `400`. You can catch these exceptions and call `printDebug()` to obtain diagnostic information about how the payload failed verification.
 
 #### Verification options
 
@@ -348,11 +353,11 @@ $format = [
 ];
 ~~~
 
-If a parameter name (e.g. `name`) contains a trailing `?` character (e.g. `name?`), then the parameter may be omitted (or `null`) and the payload will still verify correctly. See the entry for `age` in the above example.
+If a parameter name (e.g. `age`) contains a trailing `?` character (e.g. `age?`), then the parameter may be omitted (or `null`) and the payload will still verify correctly. See the entry for `age` in the above example.
 
 If a scalar value is expected for a parameter, then the specifier is a string indicating the accepted types and any promotions/checks to apply. See the entry for `job_title` in the above example.
 
-If an indexed array of values is expected for a parameter, then the specifier is an indexed singleton array containing a scalar specifier. This specifier is applied to each element in the indexed array. See the entry for `address_lines` in the above example.
+If an indexed array of values is expected for a parameter, then the specifier is an indexed singleton array containing a scalar specifier. This specifier is applied to each element in the input value. See the entry for `address_lines` in the above example.
 
 If a nested associative array structure is expected for a parameter, then the specifier is a nested format array that is processed recursively. See the entry for `name` in the above example.
 
@@ -362,6 +367,7 @@ A scalar format string tells the verification system to perform a number of acti
 
 	<TYPE-SPECIFIER> [PROMOTION-SPECIFIER] [CHECK-SPECIFIER] ['?']
 
+**Type Specifiers**:
 The type specifier portion of the string is the concatenation of one or more type specifier characters representing the set of types that are allowed. If the value does _not_ match one of these types, then verification fails.
 
 Type specifier characters are always lower-case letter or a symbol. The following type specifiers are provided in the current implementation:
@@ -381,6 +387,7 @@ Example type specifiers:
 | `i` | Allow only integer |
 | `si` | Allow string or integer |
 
+**Promotion Specifiers**:
 The promotion specifier indicates an optional promotion operation to perform after the type validation. A promotion is generally an operation that converts the value; most of the core promotions provided by the current implementation are type promotions.
 
 The promotion specifier portion of the format string is a single upper-case letter or symbol. The following promotions are provided in the current implementation:
@@ -402,7 +409,8 @@ Example specifiers with promotion:
 | `ibB` | Allow integer or boolean and promote to boolean |
 | `s^` | Allow string and trim |
 
-The check specifier performs one or more additional validation actions on the value after the promotion. Check actions are predicate actions that fail validation when they return false.
+**Check Specifiers**:
+The check specifier performs one or more additional validation actions on the value after the promotion. Check actions are predicate actions that fail validation when they return `false`.
 
 The check specifier portion of the format string is the concatenation of one or more non-letter characters. The following check actions are provided in the current implementation:
 
@@ -423,7 +431,7 @@ Example specifiers with checks:
 
 #### Custom Types, Promotions and Checks
 
-Using the `TCCL\Router\PayloadVerify` class, you can add register custom type, promotion and check specifiers as described in the previous section. Example:
+Using the `TCCL\Router\PayloadVerify` class, you can register custom type, promotion and check specifiers as described in the previous section. Example:
 
 ~~~php
 use TCCL\Router\PayloadVerify;
@@ -433,17 +441,17 @@ function is_user_id($value) : bool {
 	    return false;
     }
 
-	$id = (int)$value;
-	return $id >= 1;
+     $id = (int)$value;
+     return $id >= 1;
 }
 
 PayloadVerify::registerType('u','is_user_id');
 ~~~
 
-Note that when you register custom type, promotion or check specifiers, you must be careful to not override an existing specifier if you intend to keep using it. The `PayloadVerify` class with validate the specifiers to ensure there are no conflicts. Specifiers must meet the requirements listed below:
+Note that when you register custom type, promotion or check specifiers, you must be careful to not override an existing specifier if you intend to keep using it. The `PayloadVerify` class will validate the specifiers to ensure there are no conflicts. Specifiers must meet the requirements listed below:
 
 | Item | Requirements |
 | -- | -- |
 | Type Specifier | Must be lower-case letter `a..z` |
 | Promotion Specifier |  Must be upper-case letter `A..Z` or a non-letter character; the set of non-letter promotion specifier characters must be mutually exclusive of the set of non-letter check specifier characters |
-| Check Specifier |  Must be a non-letter character; the set of non-letter check specifier characters must be mutually exclusive of the set of non-letter promotion specifier characters |
+| Check Specifier |  Must be a non-letter character; the set of check specifier characters must be mutually exclusive of the set of non-letter promotion specifier characters |
