@@ -213,7 +213,7 @@ You must also implement the `handleServerError` and `handleRouterError` methods 
 
 Router method handling allows you to define a single handler class with multiple methods that handle each request. To add method handling to a `Router` subclass, use trait `TCCL\Router\RouterMethodHandling`.
 
-Once method handling has been added, you can add a method name to a class name handler specifier (e.g. `Namespace\Class::methodName`). You do not need to implement `RequestHandler` in the handler class when using method handling. Handler methods must be non-static and receive a single `Router` argument.
+Once method handling has been added, you can add a method name to a class name handler specifier (e.g. `Namespace\Class::methodName`). You do not need to implement `RequestHandler` in the handler class when using method handling. Handler methods may be either static or non-static and receive a single `Router` argument. For a static method, use the syntax `@class::method`.
 
 ~~~php
 use TCCL\Router\Router;
@@ -232,6 +232,7 @@ class MyRouter extends Router {
         });
 
 		$this->addRoute(Router::HTTP_GET,'/time','Handler::getTime');
+		$this->addRoute(Router::HTTP_GET,'/favnum','@Handler::getFavoriteNumber')
 	}
 }
 
@@ -239,6 +240,10 @@ class Handler {
 	public function getTime(MyRouter $router) {
 		/* ... */
 	}
+
+    public static function getFavoriteNumber(MyRouter $router) {
+	    /* ... */
+    }
 }
 ~~~
 
