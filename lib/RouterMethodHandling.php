@@ -30,14 +30,14 @@ trait RouterMethodHandling {
      * @return string
      *  NOTE: null is returned if no handler method was identified.
      */
-    public function getHandlerMethod() {
+    public function getHandlerMethod() : ?string {
         return $this->handlerMethod;
     }
 
     /**
      * Overrides Router::createHandler().
      */
-    protected function createHandler($handler) {
+    protected function createHandler($handler) : callable {
         if (is_string($handler)) {
             $parts = @explode('::',$handler,2);
 

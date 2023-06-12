@@ -21,8 +21,10 @@ trait RouterRESTHandling {
      *
      * @param mixed $payload
      *  A json-encodable value.
+     * @param int $statusCode
+     *  The HTTP status code to assign to the response.
      */
-    public function writeJson($payload,$statusCode = 200) {
+    public function writeJson($payload,$statusCode = 200) : void {
         $this->statusCode = $statusCode;
         $this->contentType = Router::CONTENT_JSON;
         $this->flush();
@@ -32,8 +34,11 @@ trait RouterRESTHandling {
 
     /**
      * Writes an empty JSON object to the output stream.
+     *
+     * @param int $statusCode
+     *  The HTTP status code to assign to the response.
      */
-    public function writeEmptyJsonObject($statusCode = 200) {
+    public function writeEmptyJsonObject(int $statusCode = 200) : void {
         $this->statusCode = $statusCode;
         $this->contentType = Router::CONTENT_JSON;
         $this->flush();
@@ -44,7 +49,7 @@ trait RouterRESTHandling {
     /**
      * Issues an HTTP 204 "No Content" status code.
      */
-    public function noContent() {
+    public function noContent() : void {
         $this->statusCode = 204;
         $this->flush();
     }
@@ -52,7 +57,7 @@ trait RouterRESTHandling {
     /**
      * Overrides Router::resultHandler().
      */
-    protected function resultHandler($result) {
+    protected function resultHandler($result) : void {
         if (!isset($result)) {
             $this->noContent();
         }

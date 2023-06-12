@@ -84,7 +84,7 @@ class PayloadVerify {
      * @param callable $typeFn
      *  The predicate function called to verify the scalar.
      */
-    public static function registerType($typechar,callable $typeFn) {
+    public static function registerType(string $typechar,callable $typeFn) : void {
         $chr = strtolower($typechar[0]);
         if ($chr < 'a' || $chr > 'z') {
             throw new \Exception(
@@ -106,7 +106,7 @@ class PayloadVerify {
      *  The function called to perform the type promotion. Such a function takes
      *  a single scalar argument and returns the promoted value.
      */
-    public static function registerPromotion($promotechar,callable $promoteFn) {
+    public static function registerPromotion(string $promotechar,callable $promoteFn) : void {
         $chr = strtoupper($promotechar[0]);
         if (isset(self::$checkFns[$chr])) {
             throw new \Exception(
@@ -126,7 +126,7 @@ class PayloadVerify {
      * @param callable $checkFn
      *  The predicate function called to perform the check.
      */
-    public static function registerCheck($checkchar,callable $checkFn) {
+    public static function registerCheck(string $checkchar,callable $checkFn) : void {
         $chr = strtolower($checkchar[0]);
         if ($chr >= 'a' && $chr <= 'z') {
             throw new \Exception(
@@ -150,19 +150,19 @@ class PayloadVerify {
      * @param mixed $format
      * @param array $options
      */
-    public static function verify(&$vars,$format,$options = []) {
+    public static function verify(&$vars,$format,array $options = []) : void {
         self::$currentOptions = $options + self::$defaultOptions;
-        $result = self::verifyDecide($vars,$format);
+        self::verifyDecide($vars,$format);
         self::$currentOptions = null;
-        return $result;
     }
 
-    private static function verifyDecide(&$vars,$format) {
+    private static function verifyDecide(&$vars,$format) : void {
         if (is_scalar($format)) {
-            return self::verifyScalar($vars,$format);
+            self::verifyScalar($vars,$format);
         }
-
-        return self::verifyArray($vars,$format);
+        else {
+            self::verifyArray($vars,$format);
+        }
     }
 
     private static function verifyScalar(&$vars,$format) {
@@ -172,7 +172,8 @@ class PayloadVerify {
         }
 
         if (!is_string($format)) {
-            throw new \Exception('Invalid scalar format');
+            $print = var_export($format,true);
+            throw new \Exception("Invalid scalar format: $print");
         }
 
         $typeInfo = self::parseTypeFormat($format);
@@ -258,7 +259,7 @@ class PayloadVerify {
         }
     }
 
-    private static function parseKey($key) {
+    private static function parseKey(string $key) : array {
         $regex = '/^([a-zA-Z_][A-Za-z_0-9]*)([?]?)$/';
 
         if (preg_match($regex,$key,$match)) {
@@ -268,10 +269,10 @@ class PayloadVerify {
             ];
         }
 
-        throw new \Exception('Invalid payload key in format');
+        throw new \Exception("Invalid payload key '$key' in format");
     }
 
-    private static function parseTypeFormat($format) {
+    private static function parseTypeFormat(string $format) : array {
         $types = implode('',array_keys(self::$typeFns));
         $promotions = implode('',array_keys(self::$promoteFns));
         $types = preg_quote($types);
@@ -317,22 +318,22 @@ class PayloadVerify {
             return $results;
         }
 
-        throw new \Exception('Invalid scalar format');
+        throw new \Exception("Invalid scalar format: '$format'");
     }
 
-    private static function is_positive($val) {
+    private static function is_positive($val) : bool {
         return $val > 0;
     }
 
-    private static function is_negative($val) {
+    private static function is_negative($val) : bool {
         return $val < 0;
     }
 
-    private static function is_nonnegative($val) {
+    private static function is_nonnegative($val) : bool {
         return $val >= 0;
     }
 
-    private static function is_nonzero($val) {
+    private static function is_nonzero($val) : bool {
         return $val != 0;
     }
 }

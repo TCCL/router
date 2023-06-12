@@ -65,15 +65,15 @@ class Router {
      *
      * @var array
      */
-    private $routeTable = array(
-        'GET' => array(),
-        'POST' => array(),
-        'PUT' => array(),
-        'DELETE' => array(),
-        'PATCH' => array(),
-        'HEAD' => array(),
-        'OPTIONS' => array(),
-    );
+    private $routeTable = [
+        'GET' => [],
+        'POST' => [],
+        'PUT' => [],
+        'DELETE' => [],
+        'PATCH' => [],
+        'HEAD' => [],
+        'OPTIONS' => [],
+    ];
 
     /**
      * The path used to determine the basePath to any URI such as one generated
@@ -86,7 +86,7 @@ class Router {
     /**
      * Request information: publicly available for reading.
      */
-    public $matches = array();
+    public $matches = [];
     public $method;
     public $uri;
     public $params;
@@ -96,13 +96,13 @@ class Router {
      */
     public $statusCode = 200;
     public $contentType = self::CONTENT_HTML;
-    public $headers = array();
+    public $headers = [];
 
     /**
      * A request handler callback dedicated to doing nothing. This is used to
      * define a default route.
      */
-    public static function nop() {
+    public static function nop() : void {
 
     }
 
@@ -111,7 +111,7 @@ class Router {
      *
      * @return Router
      */
-    public static function getExecutingRouter() {
+    public static function getExecutingRouter() : Router {
         return self::$executingRouter;
     }
 
@@ -120,9 +120,10 @@ class Router {
      *
      * @param mixed $vars
      * @param mixed $format
+     * @param array $options
      */
-    public static function verifyPayload(...$forward) {
-        return PayloadVerify::verify(...$forward);
+    public static function verifyPayload(&$vars,$format,array $options = []) : void {
+        PayloadVerify::verify($vars,$format,$options);
     }
 
     /**
@@ -148,22 +149,25 @@ class Router {
      *  Either a callable or a class that implements RequestHandler that
      *  represents the handler for the request
      */
-    public function addRoute($method,$uri,$handler) {
+    public function addRoute($method,string $uri,$handler) : void {
         if ($method == self::HTTP_ALL) {
-            $method = array_keys($this->routeTable);
+            $ms = array_keys($this->routeTable);
+        }
+        else {
+            $ms = $method;
+        }
+
+        if (!is_array($ms)) {
+            $ms = [$ms];
         }
 
         // Add the handler to the route table.
-        if (is_array($method)) {
-            foreach ($method as $m) {
-                if (!isset($this->routeTable[$m])) {
-                    throw new \Exception("Bad request method '$m'");
-                }
-                $this->routeTable[$m][$uri] = $handler;
+        foreach ($method as $m) {
+            if (!isset($this->routeTable[$m])) {
+                throw new \Exception("Bad request method '$m'");
             }
-        }
-        else {
-            $this->routeTable[$method][$uri] = $handler;
+
+            $this->routeTable[$m][$uri] = $handler;
         }
     }
 
@@ -176,14 +180,13 @@ class Router {
      *  regex. The handler is a callable or class that implements
      *  RequestHandler.
      */
-    public function addRoutesFromTable(array $table) {
+    public function addRoutesFromTable(array $table) : void {
         foreach ($table as $method => $bucket) {
-            if (!isset($this->routeTable[$method])) {
-                $this->routeTable[$method] = $bucket;
+            if (!isset($this->routeTable[$m])) {
+                throw new \Exception("Bad request method '$m'");
             }
-            else {
-                $this->routeTable[$method] += $bucket;
-            }
+
+            $this->routeTable[$method] += $bucket;
         }
     }
 
@@ -200,7 +203,7 @@ class Router {
      *  this directory so that routes can happen under subdirectories. This
      *  should be an absolute path (under the Web root).
      */
-    public function route($method,$uri,$basePath = null) {
+    public function route(string $method,string $uri,string $basePath = null) : void {
         // Apply the base path if set or if an existing base path was not in
         // place.
         if (isset($basePath) || !isset($this->basePath)) {
@@ -222,7 +225,7 @@ class Router {
      * @param string $value
      *  The header value
      */
-    public function addHeader($key,$value) {
+    public function addHeader(string $key,string $value) : void {
         $this->headers[$key] = $value;
     }
 
@@ -232,7 +235,7 @@ class Router {
      * Router object will not be written to the output stream (which can be
      * desireable in some cases).
      */
-    public function flush() {
+    public function flush() : void {
         http_response_code($this->statusCode);
         header("Content-Type: $this->contentType");
         foreach ($this->headers as $key => $value) {
@@ -249,7 +252,7 @@ class Router {
      * @param array $params
      *  Any query parameters to include in the URI.
      */
-    public function redirect($uri,$params = false) {
+    public function redirect(string $uri,array $params = null) : void {
         header('Location: ' . $this->getURI($uri,$params));
         exit;
     }
@@ -264,14 +267,14 @@ class Router {
      *
      * @return string
      */
-    public function getURI($component,$params = false) {
+    public function getURI($component,array $params = null) : string {
         // Ensure leading path separator in component.
         if (empty($component) || $component[0] != '/') {
             $component = "/$component";
         }
 
         // Add query parameters.
-        if (!empty($params) && is_array($params)) {
+        if (isset($params)) {
             $component .= '?' . http_build_query($params);
         }
 
@@ -285,7 +288,7 @@ class Router {
      *  The MIME type of the request as indicated by the client, or null if no
      *  such value could be reliably determined.
      */
-    public function getRequestType() {
+    public function getRequestType() : string {
         if (isset($_SERVER['CONTENT_TYPE'])) {
             $type = explode(';',$_SERVER['CONTENT_TYPE'])[0];
         }
@@ -306,9 +309,9 @@ class Router {
      * @param mixed $default
      *  A value to return if the request parameter is not found.
      *
-     * @return string
+     * @return mixed
      */
-    public function getRequestParam($name,$default = null) {
+    public function getRequestParam(string $name,$default = null) {
         if (isset($this->params[$name])) {
             return $this->params[$name];
         }
@@ -328,10 +331,17 @@ class Router {
      * @param array $options
      *  Additional options to pass to the verify functionality.
      *
+     * @return mixed
+     *
      * @throws TCCL\Router\RouterException
      *  Throws a generic HTTP-400 RouterException upon verification failure.
      */
-    public function getRequestParamVerify($name,$format,$default = null,$options = []) {
+    public function getRequestParamVerify(
+        string $name,
+        $format,
+        $default = null,
+        array $options = [])
+    {
         if (isset($this->params[$name])) {
             $value = $this->params[$name];
             PayloadVerify::verify($value,$format,$options);
@@ -349,10 +359,12 @@ class Router {
      * @param array $options
      *  Additional options to pass to the verify functionality.
      *
+     * @return array
+     *
      * @throws TCCL\Router\RouterException
      *  Throws a generic HTTP-400 RouterException upon verification failure.
      */
-    public function getPayloadVerify($format,$options = []) {
+    public function getPayloadVerify($format,array $options = []) : array {
         $copy = $this->params;
         PayloadVerify::verify($copy,$format,$options);
         return $copy;
@@ -375,18 +387,17 @@ class Router {
      *  the function returns NULL, then the route was handled by a subrouter and
      *  no further action is necessary.
      */
-    protected function createHandler($handler) {
+    protected function createHandler($handler) : callable {
         // Straight callables are just forwarded directly.
         if (is_callable($handler)) {
             return $handler;
         }
 
-        // Transform the handler into a callable. We assume that it may
-        // either be an object whose class implements RequestHandler.
-        // Otherwise it is a class name that implements
-        // RequestHandler. Alternatively, the class/object may derive from
-        // Router, in which case we delegate control to that router
-        // instance.
+        // Transform the handler into a callable. We assume that it may either
+        // be an object whose class implements RequestHandler.  Otherwise it is
+        // a class name that implements RequestHandler. Alternatively,
+        // the class/object may derive from Router, in which case we delegate
+        // control to that router instance.
 
         if (!is_object($handler)) {
             // Assume $handler is a class name.
@@ -394,18 +405,18 @@ class Router {
         }
 
         if (is_a($handler,'\TCCL\Router\Router')) {
-            // If the handler is another Router instance, forward the
-            // request to that router. It will function as a subrouter. A
-            // full regex match should be available for a subrouter route
-            // that will serve as the new base path.
+            // If the handler is another Router instance, forward the request to
+            // that router. It will function as a subrouter. A full regex match
+            // should be available for a subrouter route that will serve as the
+            // new base path.
 
             if (!isset($this->matches[0])) {
                 throw new \Exception('Expected regex match for subrouter');
             }
 
             $handler->copyFrom($this);
-            $handler->routeImpl();
-            return;
+
+            return [$handler,'routeImpl'];
         }
 
         // Make sure object's class implements RequestHandler.
@@ -415,7 +426,7 @@ class Router {
             );
         }
 
-        $handler = array($handler,'run');
+        $handler = [$handler,'run'];
 
         return $handler;
     }
@@ -427,7 +438,7 @@ class Router {
      * @param mixed $result
      *  The result of the route handler operation.
      */
-    protected function resultHandler($result) {
+    protected function resultHandler($result) : void {
         // Do nothing...
     }
 
@@ -438,7 +449,7 @@ class Router {
      * @param string $basePath
      *  The base path to set.
      */
-    final protected function setBasePath($basePath) {
+    final protected function setBasePath(string $basePath) : void {
         // Replace all backslashes with forward slashes. This allows the
         // implementation to work on MS Windows.
         $basePath = str_replace('\\','/',$basePath);
@@ -446,7 +457,7 @@ class Router {
         $this->basePath = rtrim($basePath,'/');
     }
 
-    private function parseInputParameters() {
+    private function parseInputParameters() : void {
         $type = $this->getRequestType();
 
         if ($type == self::CONTENT_FORM_URLENCODED) {
@@ -476,7 +487,7 @@ class Router {
         }
     }
 
-    private function copyFrom(Router $other) {
+    private function copyFrom(Router $other) : void {
         // Copy request information.
         if (isset($other->matches[0])) {
             // Interpret the full regex match as the new base path for the
@@ -497,7 +508,7 @@ class Router {
         $this->headers = array_merge($this->headers,$other->headers);
     }
 
-    private function routeImpl() {
+    private function routeImpl(Router $parentRouter = null) : void {
         // Set executing router.
         self::$executingRouter = $this;
 
@@ -533,18 +544,13 @@ class Router {
             exit(1);
         }
 
-        // Create the handler. If no handler was created, then we assume the
-        // route was handled elsewhere.
+        // Create the handler and invoke. Pass any result value to the result handler.
         $handler = $this->createHandler($handler);
-        if (!isset($handler)) {
-            return;
-        }
-
-        // Invoke the handler. Pass any result value to the result handler.
-        $this->resultHandler($handler($this));
+        $result = $handler($this);
+        $this->resultHandler($result);
     }
 
-    private static function get_relative_path($basePath,$uri) {
+    private static function get_relative_path(string $basePath,string $uri) : string {
         // Find path component relative to the specified base path.
         if (!empty($basePath) && strpos($uri,$basePath) === 0) {
             $uri = substr($uri,strlen($basePath));

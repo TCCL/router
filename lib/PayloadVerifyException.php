@@ -19,7 +19,7 @@ class PayloadVerifyException extends RouterException {
     private $failedVariable;
 
     /**
-     * @var string
+     * @var mixed
      */
     private $failedFormat;
 
@@ -42,7 +42,7 @@ class PayloadVerifyException extends RouterException {
     /**
      * Gets the format that failed to match.
      *
-     * @return string
+     * @return mixed
      */
     public function getFormat() {
         return $this->failedFormat;
@@ -52,7 +52,7 @@ class PayloadVerifyException extends RouterException {
      * Prints a message to stderr that is useful when debugging a failed payload
      * verification.
      */
-    public function printDebug() {
+    public function printDebug() : void {
         $variable = var_export($this->failedVariable,true);
         $format = var_export($this->failedFormat,true);
 

@@ -8,8 +8,6 @@
 
 namespace TCCL\Router;
 
-use Exception;
-
 /**
  * Encapsulates router exception handling functionality.
  *
@@ -19,12 +17,12 @@ trait RouterExceptionHandling {
     /**
      * This method is designed to override Router::router() in a derived class.
      */
-    public function route($method,$requestURI,$basedir = null) {
+    public function route(string $method,string $uri,string $basedir = null) {
         try {
-            parent::route($method,$requestURI,$basedir);
+            parent::route($method,$uri,$basedir);
         } catch (RouterException $ex) {
             Router::getExecutingRouter()->handleRouterError($ex);
-        } catch (Exception $ex) {
+        } catch (\Exception $ex) {
             Router::getExecutingRouter()->handleServerError($ex);
         }
     }
@@ -35,11 +33,11 @@ trait RouterExceptionHandling {
      * @param Exception $ex
      *  The unknown exception that was caught by the router.
      */
-    abstract public function handleServerError(Exception $ex);
+    abstract public function handleServerError(\Exception $ex) : void;
 
     /**
      * User-defined method for handling router exceptions. These are known
      * exceptions thrown by an application's request handlers.
      */
-    abstract public function handleRouterError(RouterException $ex);
+    abstract public function handleRouterError(RouterException $ex) : void;
 }

@@ -28,10 +28,13 @@ class RouterException extends Exception {
      * @param string $reason
      *  Long-form error reason
      */
-    public function __construct($statusCode,$error = null,$reason = null) {
+    public function __construct(int $statusCode,
+                                string $error = null,
+                                string $reason = null)
+    {
         $this->statusCode = $statusCode;
-        $this->error = isset($error) ? $error : self::getDefaultError($statusCode);
-        $this->reason = isset($reason) ? $reason : self::getDefaultReason($statusCode);
+        $this->error = $error ?? self::getDefaultError($statusCode);
+        $this->reason = $reason ?? self::getDefaultReason($statusCode);
     }
 
     /**
@@ -39,7 +42,7 @@ class RouterException extends Exception {
      *
      * @return int
      */
-    public function getStatusCode() {
+    public function getStatusCode() : int {
         return $this->statusCode;
     }
 
@@ -48,7 +51,7 @@ class RouterException extends Exception {
      *
      * @return string
      */
-    public function getError() {
+    public function getError() : string {
         return $this->error;
     }
 
@@ -57,11 +60,11 @@ class RouterException extends Exception {
      *
      * @return string
      */
-    public function getReason() {
+    public function getReason() : string {
         return $this->reason;
     }
 
-    private static function getDefaultError($statusCode) {
+    private static function getDefaultError(int $statusCode) : string {
         switch ($statusCode) {
         case 400:
             return 'Bad Request';
@@ -86,7 +89,7 @@ class RouterException extends Exception {
         return 'Server Error';
     }
 
-    private static function getDefaultReason($statusCode) {
+    private static function getDefaultReason(int $statusCode) : string {
         switch ($statusCode) {
         case 400:
             return 'The request is malformed and could not be processed.';
