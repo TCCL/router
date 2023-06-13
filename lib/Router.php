@@ -131,9 +131,14 @@ class Router {
      *
      * @param callable|RequestHandler $notFoundHandler
      *  A default handler to call when a specified route does not exist
+     * @param string $basePath
+     *  The base path of the requests. URIs are transformed to be relative to
+     *  this directory so that routes can happen under subdirectories. This
+     *  should be an absolute path (under the Web root).
      */
-    public function __construct($notFoundHandler) {
+    public function __construct($notFoundHandler,string $basePath = '') {
         $this->notFound = $notFoundHandler;
+        $this->setBasePath($basePath);
     }
 
     /**
@@ -162,7 +167,7 @@ class Router {
         }
 
         // Add the handler to the route table.
-        foreach ($method as $m) {
+        foreach ($ms as $m) {
             if (!isset($this->routeTable[$m])) {
                 throw new \Exception("Bad request method '$m'");
             }
@@ -182,8 +187,8 @@ class Router {
      */
     public function addRoutesFromTable(array $table) : void {
         foreach ($table as $method => $bucket) {
-            if (!isset($this->routeTable[$m])) {
-                throw new \Exception("Bad request method '$m'");
+            if (!isset($this->routeTable[$method])) {
+                throw new \Exception("Bad request method '$method'");
             }
 
             $this->routeTable[$method] += $bucket;
@@ -198,18 +203,8 @@ class Router {
      *  The HTTP request method
      * @param string $uri
      *  The request URI.
-     * @param string $basePath
-     *  The base path of the requests. URIs are transformed to be relative to
-     *  this directory so that routes can happen under subdirectories. This
-     *  should be an absolute path (under the Web root).
      */
-    public function route(string $method,string $uri,string $basePath = null) : void {
-        // Apply the base path if set or if an existing base path was not in
-        // place.
-        if (isset($basePath) || !isset($this->basePath)) {
-            $this->setBasePath($basePath);
-        }
-
+    public function route(string $method,string $uri) : void {
         $this->uri = self::get_relative_path($this->basePath,parse_url($uri,PHP_URL_PATH));
         $this->method = strtoupper($method);
 
@@ -288,7 +283,7 @@ class Router {
      *  The MIME type of the request as indicated by the client, or null if no
      *  such value could be reliably determined.
      */
-    public function getRequestType() : string {
+    public function getRequestType() : ?string {
         if (isset($_SERVER['CONTENT_TYPE'])) {
             $type = explode(';',$_SERVER['CONTENT_TYPE'])[0];
         }
@@ -298,6 +293,7 @@ class Router {
         else {
             $type = null;
         }
+
         return $type;
     }
 

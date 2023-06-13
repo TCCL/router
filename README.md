@@ -32,7 +32,10 @@ composer require tccl/router
 
 ### Creating a router
 
-Router provides a mechanism for routing control to a handler based on an input URI. It is very easy to set up and use. Just create an instance of type `TCCL\Router\Router`. The constructor takes a handler argument which is the default handler used when a route does not match:
+Router provides a mechanism for routing control to a handler based on an input URI. It is very easy to set up and use. Just create an instance of type `TCCL\Router\Router`. The constructor takes two arguments:
+
+1. A handler used as the default when a route does not match
+2. The router base path (optional, defaults to none)
 
 ~~~php
 use TCCL\Router\Router;
@@ -46,6 +49,29 @@ function not_found(Router $router) {
 
 $router = new Router('not_found');
 ~~~
+
+#### Router Base path
+
+When you create a router, you may specify a base path as the second constructor argument. This is useful for when an application is running under a sub-directory of the document root. The router will automatically convert the request URIs relative to the configured base path when matching against the routing table.
+
+> You can also set the base path using the protected method `setBasePath` if you are subclassing `TCCL\Router\Router`.
+
+Pro Tip: To allow your application to work arbitrarily under any sub-directory of the document root, calculate the base path using the path of the directory containing the entry point script and the value of the `DOCUMENT_ROOT` server variable.
+
+~~~php
+// Given __FILE__:"/path/to/www/app/index.php"
+
+$entryPointPath = dirname(__FILE__);
+$documentRoot = $_SERVER['DOCUMENT_ROOT'];
+$basePath = substr($entryPointPath,strlen($documentRoot));
+
+// Given entryPointPath:"/path/to/www/app" and documentRoot:"/path/to/www",
+// then we get basePath:"/app"
+
+$router = new Router('not_found',$basePath);
+~~~
+
+This trick works if you have an entry point script (e.g. `index.php`) that is called for each route; the entry point script must be installed at the root of the project tree.
 
 ### Adding routes
 
@@ -143,32 +169,6 @@ To actually route a request, you must execute the router using its `route` metho
 ~~~php
 $router->route($_SERVER['REQUEST_METHOD'],$_SERVER['REQUEST_URI']);
 ~~~
-
-#### Base path
-
-The `route` method also takes a final parameter indicating the base path for all requests. This is useful for when an application is running under a sub-directory of the document root. The router will automatically convert the request URI relative to the configured base path when matching against the routing table.
-
-> You can also set the base path using the protected method `setBasePath` if you are subclassing `TCCL\Router\Router`.
-
-Pro Tip: To allow your application to work arbitrarily under any sub-directory of the document root, calculate the base path using the path of the directory containing the entry point script and the value of the `DOCUMENT_ROOT` server variable.
-
-~~~php
-// Given __FILE__:"/path/to/www/app/index.php"
-
-$entryPointPath = dirname(__FILE__);
-$documentRoot = $_SERVER['DOCUMENT_ROOT'];
-$basePath = substr($entryPointPath,strlen($documentRoot));
-
-// Given entryPointPath:"/path/to/www/app" and documentRoot:"/path/to/www",
-// then we get basePath:"/app"
-
-$router->route(
-    $_SERVER['REQUEST_METHOD'],
-    $_SERVER['REQUEST_URI'],$basePath
-);
-~~~
-
-This trick works if you have an entry point script (e.g. `index.php`) that is called for each route; the entry point script must be installed at the root of the project tree.
 
 ### Subclassing `Router`
 
