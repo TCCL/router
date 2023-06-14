@@ -109,9 +109,10 @@ class Router {
     /**
      * Gets the Router instance that last executed.
      *
-     * @return Router
+     * @return TCCL\Router\Router
+     *  Returns null if no router has executed.
      */
-    public static function getExecutingRouter() : Router {
+    public static function getExecutingRouter() : ?Router {
         return self::$executingRouter;
     }
 
