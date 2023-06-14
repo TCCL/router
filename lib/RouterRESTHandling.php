@@ -25,9 +25,11 @@ trait RouterRESTHandling {
      *  The HTTP status code to assign to the response.
      */
     public function writeJson($payload,$statusCode = 200) : void {
-        $this->statusCode = $statusCode;
-        $this->contentType = Router::CONTENT_JSON;
-        $this->flush();
+        if (!headers_sent()) {
+            $this->statusCode = $statusCode;
+            $this->contentType = Router::CONTENT_JSON;
+            $this->flush();
+        }
 
         echo json_encode($payload);
     }
@@ -39,9 +41,11 @@ trait RouterRESTHandling {
      *  The HTTP status code to assign to the response.
      */
     public function writeEmptyJsonObject(int $statusCode = 200) : void {
-        $this->statusCode = $statusCode;
-        $this->contentType = Router::CONTENT_JSON;
-        $this->flush();
+        if (!headers_sent()) {
+            $this->statusCode = $statusCode;
+            $this->contentType = Router::CONTENT_JSON;
+            $this->flush();
+        }
 
         echo '{}';
     }
@@ -50,6 +54,10 @@ trait RouterRESTHandling {
      * Issues an HTTP 204 "No Content" status code.
      */
     public function noContent() : void {
+        if (headers_sent()) {
+            return;
+        }
+
         $this->statusCode = 204;
         $this->flush();
     }
