@@ -10,11 +10,14 @@ class Subrouter extends Router {
     }
 
     public function __construct() {
-        parent::__construct([get_class(),'not_found']);
+        parent::__construct([get_class($this),'not_found']);
 
         $this->addRoutesFromTable([
             Router::HTTP_GET => [
                 '/one' => 'TCCL\Test\Router\Sample\Handler',
+                '/error' => function(Router $router) {
+                    throw new \Exception('Whoops!');
+                },
             ],
         ]);
     }

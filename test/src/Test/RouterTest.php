@@ -5,6 +5,9 @@ namespace TCCL\Test\Router\Test;
 use TCCL\Router\Router;
 use TCCL\Test\Router\RouterTestCase;
 use TCCL\Test\Router\Sample\Handler;
+use TCCL\Test\Router\Sample\Subrouter_ExceptionHandling;
+use TCCL\Test\Router\Sample\Subrouter_MethodHandling;
+use TCCL\Test\Router\Sample\Subrouter_RESTHandling;
 
 final class RouterTest extends RouterTestCase {
     public function testBasicRouting() {
@@ -48,10 +51,10 @@ final class RouterTest extends RouterTestCase {
         $this->assertEquals($router->getURI('/page'),'/app/page');
     }
 
-    public function testRegexRouting() { 
+    public function testRegexRouting() {
         $router = new Router('TCCL\Router\Router::nop');
 
-        $getPage = function($router) { 
+        $getPage = function($router) {
             $this->assertInstanceOf(Router::class,$router);
 
             $number = (int)$router->matches[1];
@@ -95,5 +98,38 @@ final class RouterTest extends RouterTestCase {
 
         $output = $this->routeAndCapture($router,'GET','/path/one');
         $this->assertEquals($output,'GET URI=/one');
+    }
+
+    public function testExceptionHandling() {
+        $router = new Subrouter_ExceptionHandling;
+
+        $output = $this->routeAndCapture($router,'GET','/one');
+        $this->assertEquals($output,'GET URI=/one');
+
+        $output = $this->routeAndCapture($router,'GET','/two');
+        $this->assertEquals($output,'Router Error: 404');
+
+        $output = $this->routeAndCapture($router,'GET','/error');
+        $this->assertEquals($output,'Server Error: Whoops!');
+    }
+
+    public function testMethodHandling() {
+        $router = new Subrouter_MethodHandling;
+
+        $output = $this->routeAndCapture($router,'GET','/one');
+        $this->assertEquals($output,'GET URI=/one');
+
+        $output = $this->routeAndCapture($router,'GET','/other');
+        $this->assertEquals($output,'OTHER GET URI=/other');
+    }
+
+    public function testRESTHandling() {
+        $router = new Subrouter_RESTHandling;
+
+        $output = $this->routeAndCapture($router,'GET','/one');
+        $this->assertEquals($output,'GET URI=/one');
+
+        $output = $this->routeAndCapture($router,'GET','/rest');
+        $this->assertEquals($output,'{"a":"b"}');
     }
 }
