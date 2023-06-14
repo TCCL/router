@@ -17,9 +17,9 @@ trait RouterExceptionHandling {
     /**
      * This method is designed to override Router::router() in a derived class.
      */
-    public function route(string $method,string $uri,string $basedir = null) {
+    public function route(string $method,string $uri) : void {
         try {
-            parent::route($method,$uri,$basedir);
+            parent::route($method,$uri);
         } catch (RouterException $ex) {
             Router::getExecutingRouter()->handleRouterError($ex);
         } catch (\Exception $ex) {
