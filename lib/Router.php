@@ -401,7 +401,7 @@ class Router {
             $handler = new $handler;
         }
 
-        if (is_a($handler,'\TCCL\Router\Router')) {
+        if ($handler instanceof Router) {
             // If the handler is another Router instance, forward the request to
             // that router. It will function as a subrouter. A full regex match
             // should be available for a subrouter route that will serve as the
@@ -412,8 +412,7 @@ class Router {
             }
 
             $handler->copyFrom($this);
-
-            return [$handler,'routeImpl'];
+            return new RouterClosure(\Closure::fromCallable([$handler,'routeImpl']));
         }
 
         // Make sure object's class implements RequestHandler.
@@ -505,7 +504,7 @@ class Router {
         $this->headers = array_merge($this->headers,$other->headers);
     }
 
-    private function routeImpl(Router $parentRouter = null) : void {
+    private function routeImpl() : void {
         // Set executing router.
         self::$executingRouter = $this;
 
@@ -541,10 +540,16 @@ class Router {
             exit(1);
         }
 
-        // Create the handler and invoke. Pass any result value to the result handler.
+        // Create the handler and invoke. Pass any result value to the result
+        // handler if we don't have a .
         $handler = $this->createHandler($handler);
-        $result = $handler($this);
-        $this->resultHandler($result);
+        if ($handler instanceof RouterClosure) {
+            $handler();
+        }
+        else {
+            $result = $handler($this);
+            $this->resultHandler($result);
+        }
     }
 
     private static function get_relative_path(string $basePath,string $uri) : string {
